@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vending\Application\GetOutputTray;
 
+use Vending\Domain\Product;
 use Vending\Domain\VendingMachineRepository;
 
 final readonly class GetOutputTrayHandler
@@ -14,6 +15,9 @@ final readonly class GetOutputTrayHandler
     {
         $tray = $this->machines->get($query->machineId)->outputTray;
 
-        return new OutputTrayContents($tray->coins);
+        return new OutputTrayContents(
+            array_map(static fn(Product $product): string => $product->name, $tray->products),
+            $tray->coins,
+        );
     }
 }

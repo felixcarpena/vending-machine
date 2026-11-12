@@ -6,21 +6,31 @@ namespace Vending\Domain;
 
 final readonly class OutputTray
 {
-    private function __construct(public Coins $coins) {}
+    /** @param list<Product> $products */
+    private function __construct(
+        public array $products,
+        public Coins $coins,
+    ) {}
 
     public static function empty(): self
     {
-        return new self(Coins::of());
+        return new self([], Coins::of());
+    }
+
+    #[\NoDiscard]
+    public function withProduct(Product $product): self
+    {
+        return new self([...$this->products, $product], $this->coins);
     }
 
     #[\NoDiscard]
     public function withCoins(Coins $coins): self
     {
-        return new self($this->coins->plus($coins));
+        return new self($this->products, $this->coins->plus($coins));
     }
 
     public function isEmpty(): bool
     {
-        return $this->coins->isEmpty();
+        return $this->products === [] && $this->coins->isEmpty();
     }
 }

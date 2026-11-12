@@ -8,12 +8,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Tests\Mother\VendingMachineMother;
+use Vending\Application\BuyProduct\BuyProduct;
 use Vending\Application\GetMachineContents\GetMachineContents;
 use Vending\Application\InsertCoin\InsertCoin;
 use Vending\Application\ReturnMoney\ReturnMoney;
 use Vending\Application\ServiceMachine\ServiceMachine;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
+use Vending\Domain\Selector;
 use Vending\Domain\StockLevels;
 use Vending\UI\Cli\Input\ActionParser;
 use Vending\UI\Cli\Input\InvalidLine;
@@ -170,5 +172,28 @@ final class ActionParserTest extends TestCase
         $message = ActionParser::messageFor('RETURN-COIN', VendingMachineMother::id());
 
         self::assertEquals(new ReturnMoney(VendingMachineMother::id()), $message);
+    }
+
+    #[Test]
+    public function reads_get_as_buying_from_a_slot(): void
+    {
+        $message = ActionParser::messageFor('GET-WATER1', VendingMachineMother::id());
+
+        self::assertEquals(new BuyProduct(VendingMachineMother::id(), Selector::of('WATER1')), $message);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function purchasesThatAreNotValid(): iterable
+    {
+        yield 'no selector' => ['GET-'];
+        yield 'a lower case selector' => ['GET-water'];
+        yield 'two words' => ['GET-SPARKLING WATER'];
+    }
+
+    #[Test]
+    #[DataProvider('purchasesThatAreNotValid')]
+    public function reads_nothing_from_a_purchase_that_is_not_valid(string $action): void
+    {
+        self::assertNull(ActionParser::messageFor($action, VendingMachineMother::id()));
     }
 }

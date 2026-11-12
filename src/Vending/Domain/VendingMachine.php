@@ -9,6 +9,9 @@ use Vending\Domain\Event\CoinInserted;
 use Vending\Domain\Event\CoinsReturned;
 use Vending\Domain\Event\MachineServiced;
 use Vending\Domain\Event\OutputTaken;
+use Vending\Domain\Event\ProductDispensed;
+use Vending\Domain\Exception\ChangeNotAvailable;
+use Vending\Domain\Exception\NotEnoughMoney;
 
 final class VendingMachine extends AggregateRoot
 {
@@ -50,6 +53,27 @@ final class VendingMachine extends AggregateRoot
 
         $this->outputTray = OutputTray::empty();
         $this->record(new OutputTaken($this->id));
+    }
+
+    public function buy(Selector $selector): void
+    {
+        $slot = $this->slots->find($selector);
+        $slotsAfterSale = $this->slots->withOneUnitLessOf($selector);
+
+        $inserted = $this->escrow->total();
+        if ($inserted->isLessThan($slot->price)) {
+            throw NotEnoughMoney::for($slot->price, $inserted);
+        }
+        $change = $inserted->subtract($slot->price);
+        if (Money::zero()->isLessThan($change)) {
+            throw ChangeNotAvailable::for($change);
+        }
+
+        $this->slots = $slotsAfterSale;
+        $this->availableChange = $this->availableChange->deposit($this->escrow->coins);
+        $this->escrow = Escrow::empty();
+        $this->outputTray = $this->outputTray->withProduct($slot->product);
+        $this->record(new ProductDispensed($this->id, $selector, $slot->product, $slot->price));
     }
 
     public function insertedMoney(): Money

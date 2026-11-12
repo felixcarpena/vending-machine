@@ -32,4 +32,36 @@ final class MoneyTest extends TestCase
 
         Money::fromCents(-5);
     }
+
+    #[Test]
+    public function subtracts_an_amount(): void
+    {
+        $rest = Money::fromCents(100)->subtract(Money::fromCents(65));
+
+        self::assertEquals(Money::fromCents(35), $rest);
+    }
+
+    #[Test]
+    public function is_less_than_a_bigger_amount(): void
+    {
+        self::assertTrue(Money::fromCents(25)->isLessThan(Money::fromCents(100)));
+    }
+
+    #[Test]
+    public function is_not_less_than_the_same_amount(): void
+    {
+        self::assertFalse(Money::fromCents(100)->isLessThan(Money::fromCents(100)));
+    }
+
+    #[Test]
+    public function is_a_multiple_of_an_amount_that_divides_it(): void
+    {
+        self::assertTrue(Money::fromCents(65)->isMultipleOf(Money::fromCents(5)));
+    }
+
+    #[Test]
+    public function is_not_a_multiple_of_an_amount_that_does_not_divide_it(): void
+    {
+        self::assertFalse(Money::fromCents(67)->isMultipleOf(Money::fromCents(5)));
+    }
 }

@@ -30,4 +30,20 @@ final readonly class Money
     {
         return new self($this->cents + $other->cents);
     }
+
+    #[\NoDiscard]
+    public function subtract(self $other): self
+    {
+        return new self($this->cents - $other->cents);
+    }
+
+    public function isLessThan(self $other): bool
+    {
+        return $this->cents < $other->cents;
+    }
+
+    public function isMultipleOf(self $other): bool
+    {
+        return $this->cents % $other->cents === 0;
+    }
 }

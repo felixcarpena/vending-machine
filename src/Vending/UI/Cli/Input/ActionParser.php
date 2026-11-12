@@ -5,17 +5,20 @@ declare(strict_types=1);
 namespace Vending\UI\Cli\Input;
 
 use Shared\Application\Bus\Command;
+use Vending\Application\BuyProduct\BuyProduct;
 use Vending\Application\GetMachineContents\GetMachineContents;
 use Vending\Application\InsertCoin\InsertCoin;
 use Vending\Application\ReturnMoney\ReturnMoney;
 use Vending\Application\ServiceMachine\ServiceMachine;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
+use Vending\Domain\Selector;
 use Vending\Domain\StockLevels;
 use Vending\Domain\VendingMachineId;
 
 final class ActionParser
 {
+    public const string BUY = 'GET-';
     public const string RETURN_COIN = 'RETURN-COIN';
     public const string SERVICE = 'SERVICE';
     public const string STATUS = 'STATUS';
@@ -46,11 +49,22 @@ final class ActionParser
 
         return match (true) {
             $coin !== null => new InsertCoin($machineId, $coin),
+            str_starts_with($action, self::BUY) => self::purchaseIn($action, $machineId),
             $action === self::RETURN_COIN => new ReturnMoney($machineId),
             $action === self::STATUS => new GetMachineContents($machineId),
             str_starts_with($action, self::SERVICE) => self::servicingIn($action, $machineId),
             default => null,
         };
+    }
+
+    private static function purchaseIn(string $action, VendingMachineId $machineId): ?BuyProduct
+    {
+        $selector = substr($action, strlen(self::BUY));
+        if (preg_match(self::SELECTOR, $selector) !== 1) {
+            return null;
+        }
+
+        return new BuyProduct($machineId, Selector::of($selector));
     }
 
     private static function servicingIn(string $action, VendingMachineId $machineId): ?ServiceMachine

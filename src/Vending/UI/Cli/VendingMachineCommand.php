@@ -16,6 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Uid\Uuid;
 use Vending\Application\GetInsertedMoney\GetInsertedMoney;
 use Vending\Application\GetMachineContents\GetMachineContents;
+use Vending\Application\GetMachineContents\SlotContents;
 use Vending\Application\GetOutputTray\GetOutputTray;
 use Vending\Application\ServiceMachine\ServiceMachine;
 use Vending\Application\StartMachine\StartMachine;
@@ -26,6 +27,7 @@ use Vending\UI\Cli\Input\ActionParser;
 use Vending\UI\Cli\Input\InvalidLine;
 use Vending\UI\Cli\Output\CoinFormat;
 use Vending\UI\Cli\Output\MoneyFormat;
+use Vending\UI\Cli\Output\RefusalView;
 use Vending\UI\Cli\Output\StatusView;
 use Vending\UI\Cli\Output\TrayView;
 
@@ -45,8 +47,10 @@ final class VendingMachineCommand extends Command
         $this->commandBus->dispatch(new StartMachine($machineId));
 
         $output->writeln('Vending machine ready.');
+        $slots = $this->queryBus->ask(new GetMachineContents($machineId))->slots;
         $output->writeln(sprintf('Actions: %s', implode(' | ', [
             ...array_map(CoinFormat::of(...), Coin::cases()),
+            ...array_map(static fn(SlotContents $slot): string => ActionParser::BUY . $slot->selector, $slots),
             ActionParser::RETURN_COIN,
             ActionParser::SERVICE,
             ActionParser::STATUS,
@@ -94,8 +98,8 @@ final class VendingMachineCommand extends Command
                 $message instanceof MachineCommand => $this->commandBus->dispatch($message),
                 default => $output->writeln(sprintf('  Invalid input: %s', $action)),
             };
-        } catch (Refusal) {
-            $output->writeln(sprintf('  Invalid input: %s', $action));
+        } catch (Refusal $refusal) {
+            $output->writeln(sprintf('  %s', RefusalView::for($refusal, $action)));
         }
     }
 

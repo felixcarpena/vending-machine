@@ -12,4 +12,10 @@ final readonly class AvailableChange
     {
         return new self($coins);
     }
+
+    #[\NoDiscard]
+    public function deposit(Coins $coins): self
+    {
+        return new self($this->coins->plus($coins));
+    }
 }

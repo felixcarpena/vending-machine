@@ -52,6 +52,32 @@ final class SlotsTest extends TestCase
         (void) self::waterAnd()->restockedTo(StockLevels::of(['COFFEE' => 1]));
     }
 
+    #[Test]
+    public function find_a_slot_by_its_selector(): void
+    {
+        $juice = new Slot(Selector::of('JUICE'), Product::named('JUICE'), Money::fromCents(100), 3);
+
+        self::assertSame($juice, self::waterAnd($juice)->find(Selector::of('JUICE')));
+    }
+
+    #[Test]
+    public function do_not_find_a_slot_they_do_not_have(): void
+    {
+        $this->expectException(UnknownSlot::class);
+
+        self::waterAnd()->find(Selector::of('COFFEE'));
+    }
+
+    #[Test]
+    public function take_one_unit_from_one_slot_only(): void
+    {
+        $slots = self::waterAnd(new Slot(Selector::of('JUICE'), Product::named('JUICE'), Money::fromCents(100), 3));
+
+        $afterSale = $slots->withOneUnitLessOf(Selector::of('JUICE'));
+
+        self::assertSame([10, 2], self::stockOf($afterSale));
+    }
+
     private static function waterAnd(Slot ...$others): Slots
     {
         $water = new Slot(Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65), 10);

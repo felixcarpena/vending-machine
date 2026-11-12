@@ -1,4 +1,3 @@
-@wip
 Feature: Buy a product
   In order to get a product
   As a customer
@@ -28,10 +27,12 @@ Feature: Buy a product
       | 1                      | JUICE | JUICE   |
       | 1, 0.25, 0.25          | SODA  | SODA    |
 
+  @wip
   Scenario: Paying more than the price gives the product and the change
     When the customer enters "1, GET-WATER"
     Then the machine gives out "WATER, 0.25, 0.10"
 
+  @wip
   Scenario: A sale takes one unit, pays the change and keeps the inserted coins
     When the customer enters "1, GET-WATER"
     Then the machine now has these slots:
@@ -46,10 +47,12 @@ Feature: Buy a product
       | 0.25 | 9     |
       | 1    | 1     |
 
+  @wip
   Scenario: Change is paid with the fewest coins
     When the customer enters "1, 1, GET-SODA"
     Then the machine gives out "SODA, 0.25, 0.25"
 
+  @wip
   Scenario: Change is still paid when the largest coin first would fail
     Given the machine holds these coins:
       | coin | count |
@@ -82,6 +85,7 @@ Feature: Buy a product
     And nothing comes out
     And the inserted money is "1.00"
 
+  @wip
   Scenario: The change cannot be paid
     Given the machine holds no coins
     When the customer enters "1, GET-WATER"
@@ -89,6 +93,7 @@ Feature: Buy a product
     And nothing comes out
     And the inserted money is "1.00"
 
+  @wip
   Scenario: The inserted coins the price does not need are handed back, never used as change
     Given the machine holds these coins:
       | coin | count |

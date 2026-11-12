@@ -35,4 +35,10 @@ final class SelectorTest extends TestCase
 
         self::assertSame('WATER1', $selector->value);
     }
+
+    #[Test]
+    public function is_written_as_its_value(): void
+    {
+        self::assertSame('WATER', (string) Selector::of('WATER'));
+    }
 }

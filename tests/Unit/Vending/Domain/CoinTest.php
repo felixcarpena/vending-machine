@@ -29,6 +29,12 @@ final class CoinTest extends TestCase
     }
 
     #[Test]
+    public function every_amount_the_coins_make_is_a_multiple_of_five_cents(): void
+    {
+        self::assertEquals(Money::fromCents(5), Coin::greatestCommonDivisor());
+    }
+
+    #[Test]
     public function exists_only_for_the_accepted_coins(): void
     {
         self::assertSame(

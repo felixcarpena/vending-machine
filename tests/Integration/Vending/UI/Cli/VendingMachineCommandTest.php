@@ -28,7 +28,9 @@ final class VendingMachineCommandTest extends KernelTestCase
         $this->session->execute([]);
 
         self::assertStringContainsString(
-            "Vending machine ready.\nActions: 0.05 | 0.10 | 0.25 | 1 | RETURN-COIN | SERVICE | STATUS | EXIT",
+            "Vending machine ready.\n"
+            . 'Actions: 0.05 | 0.10 | 0.25 | 1 | GET-WATER | GET-JUICE | GET-SODA | '
+            . 'RETURN-COIN | SERVICE | STATUS | EXIT',
             $this->session->getDisplay(),
         );
     }
@@ -143,6 +145,29 @@ final class VendingMachineCommandTest extends KernelTestCase
         $this->session->execute([]);
 
         self::assertSame(1, substr_count($this->session->getDisplay(), '-> 0.10'));
+    }
+
+    #[Test]
+    public function hands_out_the_product_bought(): void
+    {
+        $this->session->setInputs(['1, 0.25, 0.25, GET-SODA', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('-> SODA', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function explains_why_a_purchase_is_refused(): void
+    {
+        $this->session->setInputs(['0.25, GET-JUICE', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString(
+            '  Purchase refused: not enough money (price 1.00, inserted 0.25)',
+            $this->session->getDisplay(),
+        );
     }
 
     #[Test]

@@ -21,6 +21,17 @@ final readonly class Slots
         return new self($bySelector);
     }
 
+    public function find(Selector $selector): Slot
+    {
+        return $this->slots[$selector->value] ?? throw UnknownSlot::of($selector);
+    }
+
+    #[\NoDiscard]
+    public function withOneUnitLessOf(Selector $selector): self
+    {
+        return new self([...$this->slots, $selector->value => $this->find($selector)->withOneUnitLess()]);
+    }
+
     #[\NoDiscard]
     public function restockedTo(StockLevels $stock): self
     {

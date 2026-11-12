@@ -15,4 +15,18 @@ enum Coin: int
     {
         return Money::fromCents($this->value);
     }
+
+    public static function greatestCommonDivisor(): Money
+    {
+        return Money::fromCents(array_reduce(
+            self::cases(),
+            static fn(int $divisor, self $coin): int => self::gcd($divisor, $coin->value),
+            0,
+        ));
+    }
+
+    private static function gcd(int $one, int $other): int
+    {
+        return $other === 0 ? $one : self::gcd($other, $one % $other);
+    }
 }

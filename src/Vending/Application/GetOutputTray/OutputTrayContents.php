@@ -8,5 +8,9 @@ use Vending\Domain\Coins;
 
 final readonly class OutputTrayContents
 {
-    public function __construct(public Coins $coins) {}
+    /** @param list<string> $products */
+    public function __construct(
+        public array $products,
+        public Coins $coins,
+    ) {}
 }

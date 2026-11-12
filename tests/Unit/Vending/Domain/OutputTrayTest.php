@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
 use Vending\Domain\OutputTray;
+use Vending\Domain\Product;
 
 final class OutputTrayTest extends TestCase
 {
@@ -34,5 +35,19 @@ final class OutputTrayTest extends TestCase
         (void) $tray->withCoins(Coins::of(Coin::TenCents));
 
         self::assertTrue($tray->isEmpty());
+    }
+
+    #[Test]
+    public function keeps_every_product_that_comes_out(): void
+    {
+        $tray = OutputTray::empty()->withProduct(Product::named('WATER'))->withProduct(Product::named('SODA'));
+
+        self::assertEquals([Product::named('WATER'), Product::named('SODA')], $tray->products);
+    }
+
+    #[Test]
+    public function is_not_empty_with_only_a_product(): void
+    {
+        self::assertFalse(OutputTray::empty()->withProduct(Product::named('WATER'))->isEmpty());
     }
 }

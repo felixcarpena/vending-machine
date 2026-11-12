@@ -104,6 +104,21 @@ final class VendingMachineContext implements Context
         Assert::assertSame($amount, end($lines['amount']));
     }
 
+    #[Then('the purchase is refused because only :inserted is inserted for a price of :price')]
+    public function thePurchaseIsRefusedForNotEnoughMoney(string $inserted, string $price): void
+    {
+        Assert::assertStringContainsString(
+            sprintf('Purchase refused: not enough money (price %s, inserted %s)', $price, $inserted),
+            $this->lastResponse,
+        );
+    }
+
+    #[Then('the purchase is refused because :slot is sold out')]
+    public function thePurchaseIsRefusedBecauseItIsSoldOut(string $slot): void
+    {
+        Assert::assertStringContainsString(sprintf('Purchase refused: %s is sold out', $slot), $this->lastResponse);
+    }
+
     #[Then('the input :input is rejected as invalid')]
     public function theInputIsRejectedAsInvalid(string $input): void
     {

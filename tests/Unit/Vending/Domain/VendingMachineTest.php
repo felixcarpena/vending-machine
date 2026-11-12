@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Vending\Domain;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Tests\Mother\VendingMachineMother;
+use Throwable;
 use Vending\Domain\AvailableChange;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
@@ -14,8 +16,14 @@ use Vending\Domain\Event\CoinInserted;
 use Vending\Domain\Event\CoinsReturned;
 use Vending\Domain\Event\MachineServiced;
 use Vending\Domain\Event\OutputTaken;
+use Vending\Domain\Event\ProductDispensed;
+use Vending\Domain\Exception\ChangeNotAvailable;
+use Vending\Domain\Exception\EmptySlot;
+use Vending\Domain\Exception\NotEnoughMoney;
 use Vending\Domain\Exception\UnknownSlot;
 use Vending\Domain\Money;
+use Vending\Domain\Product;
+use Vending\Domain\Selector;
 use Vending\Domain\Slot;
 use Vending\Domain\StockLevels;
 use Vending\Domain\VendingMachine;
@@ -205,6 +213,115 @@ final class VendingMachineTest extends TestCase
         $machine->pullEvents();
 
         self::assertSame([], $machine->pullEvents());
+    }
+
+    #[Test]
+    public function dispenses_the_product_paid_with_the_exact_amount(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('JUICE'));
+
+        self::assertEquals(
+            [new ProductDispensed(VendingMachineMother::id(), Selector::of('JUICE'), Product::named('JUICE'), Money::fromCents(100))],
+            $machine->pullEvents(),
+        );
+    }
+
+    #[Test]
+    public function takes_one_unit_of_the_product_sold(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('JUICE'));
+
+        self::assertSame([10, 9, 10], self::stockOf($machine));
+    }
+
+    #[Test]
+    public function puts_the_product_sold_in_the_output_tray(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('JUICE'));
+
+        self::assertEquals([Product::named('JUICE')], $machine->outputTray->products);
+    }
+
+    #[Test]
+    public function keeps_the_inserted_coins_as_change_once_sold(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('JUICE'));
+
+        self::assertSame(1, $machine->availableChange->coins->countOf(Coin::OneHundredCents));
+    }
+
+    #[Test]
+    public function holds_no_money_once_sold(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('JUICE'));
+
+        self::assertEquals(Money::zero(), $machine->insertedMoney());
+    }
+
+    /** @return iterable<string, array{VendingMachine, string, class-string<Throwable>}> */
+    public static function purchasesItRefuses(): iterable
+    {
+        $oneUnitInserted = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+        $aQuarterInserted = VendingMachineMother::withCoinsInserted(Coin::TwentyFiveCents);
+
+        yield 'a slot it does not have' => [$oneUnitInserted, 'COFFEE', UnknownSlot::class];
+        yield 'not enough money' => [$aQuarterInserted, 'JUICE', NotEnoughMoney::class];
+        yield 'an empty slot' => [self::soldOutOfJuice(), 'JUICE', EmptySlot::class];
+        yield 'change it cannot pay yet' => [clone $oneUnitInserted, 'WATER', ChangeNotAvailable::class];
+    }
+
+    /** @param class-string<Throwable> $refusal */
+    #[Test]
+    #[DataProvider('purchasesItRefuses')]
+    public function refuses_a_purchase_it_cannot_complete(
+        VendingMachine $machine,
+        string $selector,
+        string $refusal,
+    ): void {
+        $this->expectException($refusal);
+
+        $machine->buy(Selector::of($selector));
+    }
+
+    #[Test]
+    public function changes_nothing_when_it_refuses_a_purchase(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::TwentyFiveCents);
+
+        self::attemptToBuy($machine, 'JUICE');
+
+        self::assertEquals(VendingMachineMother::withCoinsInserted(Coin::TwentyFiveCents), $machine);
+    }
+
+    private static function soldOutOfJuice(): VendingMachine
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+        $machine->service(
+            StockLevels::of(['WATER' => 10, 'SODA' => 10]),
+            VendingMachineMother::startingChange()->coins,
+        );
+        $machine->pullEvents();
+
+        return $machine;
+    }
+
+    private static function attemptToBuy(VendingMachine $machine, string $selector): void
+    {
+        try {
+            $machine->buy(Selector::of($selector));
+        } catch (NotEnoughMoney|EmptySlot|ChangeNotAvailable|UnknownSlot) {
+            return;
+        }
     }
 
     private static function attemptToService(VendingMachine $machine, StockLevels $stock): void

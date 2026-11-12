@@ -18,6 +18,9 @@ services:
     Vending\Application\InsertCoin\InsertCoinHandler:
         tags: [{ name: messenger.message_handler, bus: command.bus }]
 
+    Vending\Application\BuyProduct\BuyProductHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
     Vending\Application\ReturnMoney\ReturnMoneyHandler:
         tags: [{ name: messenger.message_handler, bus: command.bus }]
 

@@ -12,6 +12,7 @@ use Vending\Application\GetOutputTray\GetOutputTrayHandler;
 use Vending\Application\GetOutputTray\OutputTrayContents;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
+use Vending\Domain\Selector;
 use Vending\Infrastructure\InMemoryVendingMachineRepository;
 
 final class GetOutputTrayHandlerTest extends TestCase
@@ -25,6 +26,18 @@ final class GetOutputTrayHandlerTest extends TestCase
 
         $tray = $trayReader(new GetOutputTray(VendingMachineMother::id()));
 
-        self::assertEquals(new OutputTrayContents(Coins::of(Coin::TenCents, Coin::OneHundredCents)), $tray);
+        self::assertEquals(new OutputTrayContents([], Coins::of(Coin::TenCents, Coin::OneHundredCents)), $tray);
+    }
+
+    #[Test]
+    public function names_the_products_in_the_output_tray(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+        $machine->buy(Selector::of('JUICE'));
+        $trayReader = new GetOutputTrayHandler(new InMemoryVendingMachineRepository($machine));
+
+        $tray = $trayReader(new GetOutputTray(VendingMachineMother::id()));
+
+        self::assertSame(['JUICE'], $tray->products);
     }
 }
