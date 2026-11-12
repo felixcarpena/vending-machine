@@ -19,6 +19,26 @@ final readonly class Escrow
         return new self($this->coins->add($coin));
     }
 
+    /** @return list<Coins> */
+    public function paymentsFor(Money $price): array
+    {
+        $payments = [Coins::of()];
+        foreach (Coin::cases() as $coin) {
+            $withThisCoin = [];
+            foreach ($payments as $payment) {
+                for ($count = 0; $count <= $this->coins->countOf($coin); ++$count) {
+                    $withThisCoin[] = $payment->plus(Coins::of(...array_fill(0, $count, $coin)));
+                }
+            }
+            $payments = $withThisCoin;
+        }
+
+        $enough = array_filter($payments, static fn(Coins $payment): bool => !$payment->total()->isLessThan($price));
+        usort($enough, static fn(Coins $one, Coins $other): int => $one->total()->cents <=> $other->total()->cents);
+
+        return $enough;
+    }
+
     public function isEmpty(): bool
     {
         return $this->coins->isEmpty();

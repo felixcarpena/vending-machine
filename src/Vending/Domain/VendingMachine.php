@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Vending\Domain;
 
 use Shared\Domain\AggregateRoot;
+use Vending\Domain\Event\ChangeReturned;
 use Vending\Domain\Event\CoinInserted;
 use Vending\Domain\Event\CoinsReturned;
 use Vending\Domain\Event\MachineServiced;
@@ -55,7 +56,7 @@ final class VendingMachine extends AggregateRoot
         $this->record(new OutputTaken($this->id));
     }
 
-    public function buy(Selector $selector): void
+    public function buy(Selector $selector, ChangeMaker $changeMaker): void
     {
         $slot = $this->slots->find($selector);
         $slotsAfterSale = $this->slots->withOneUnitLessOf($selector);
@@ -64,16 +65,33 @@ final class VendingMachine extends AggregateRoot
         if ($inserted->isLessThan($slot->price)) {
             throw NotEnoughMoney::for($slot->price, $inserted);
         }
-        $change = $inserted->subtract($slot->price);
-        if (Money::zero()->isLessThan($change)) {
-            throw ChangeNotAvailable::for($change);
-        }
+        [$kept, $change] = $this->paymentFor($slot->price, $changeMaker);
+        $unused = $this->escrow->coins->minus($kept);
 
         $this->slots = $slotsAfterSale;
-        $this->availableChange = $this->availableChange->deposit($this->escrow->coins);
+        $this->availableChange = $this->availableChange->withdraw($change)->deposit($kept);
         $this->escrow = Escrow::empty();
-        $this->outputTray = $this->outputTray->withProduct($slot->product);
+        $this->outputTray = $this->outputTray->withProduct($slot->product)->withCoins($change)->withCoins($unused);
         $this->record(new ProductDispensed($this->id, $selector, $slot->product, $slot->price));
+        if (!$change->isEmpty()) {
+            $this->record(new ChangeReturned($this->id, $change));
+        }
+        if (!$unused->isEmpty()) {
+            $this->record(new CoinsReturned($this->id, $unused));
+        }
+    }
+
+    /** @return array{Coins, Coins} */
+    private function paymentFor(Money $price, ChangeMaker $changeMaker): array
+    {
+        foreach ($this->escrow->paymentsFor($price) as $payment) {
+            $change = $this->availableChange->changeFor($payment->total()->subtract($price), $changeMaker);
+            if ($change !== null) {
+                return [$payment, $change];
+            }
+        }
+
+        throw ChangeNotAvailable::for($this->escrow->total()->subtract($price));
     }
 
     public function insertedMoney(): Money

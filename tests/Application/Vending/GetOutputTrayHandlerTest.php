@@ -12,6 +12,7 @@ use Vending\Application\GetOutputTray\GetOutputTrayHandler;
 use Vending\Application\GetOutputTray\OutputTrayContents;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
+use Vending\Domain\FewestCoinsChangeMaker;
 use Vending\Domain\Selector;
 use Vending\Infrastructure\InMemoryVendingMachineRepository;
 
@@ -33,7 +34,7 @@ final class GetOutputTrayHandlerTest extends TestCase
     public function names_the_products_in_the_output_tray(): void
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
-        $machine->buy(Selector::of('JUICE'));
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
         $trayReader = new GetOutputTrayHandler(new InMemoryVendingMachineRepository($machine));
 
         $tray = $trayReader(new GetOutputTray(VendingMachineMother::id()));

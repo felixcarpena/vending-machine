@@ -12,6 +12,7 @@ use Vending\Application\BuyProduct\BuyProduct;
 use Vending\Application\BuyProduct\BuyProductHandler;
 use Vending\Domain\Coin;
 use Vending\Domain\Event\ProductDispensed;
+use Vending\Domain\FewestCoinsChangeMaker;
 use Vending\Domain\Money;
 use Vending\Domain\Product;
 use Vending\Domain\Selector;
@@ -29,7 +30,7 @@ final class BuyProductHandlerTest extends TestCase
             VendingMachineMother::withCoinsInserted(Coin::OneHundredCents),
         );
         $this->eventBus = new RecordingEventBus();
-        $this->productSeller = new BuyProductHandler($this->machines, $this->eventBus);
+        $this->productSeller = new BuyProductHandler($this->machines, $this->eventBus, new FewestCoinsChangeMaker());
     }
 
     #[Test]
@@ -38,7 +39,7 @@ final class BuyProductHandlerTest extends TestCase
         ($this->productSeller)(new BuyProduct(VendingMachineMother::id(), Selector::of('JUICE')));
 
         $expected = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
-        $expected->buy(Selector::of('JUICE'));
+        $expected->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
         $expected->pullEvents();
         self::assertEquals($expected, $this->machines->get(VendingMachineMother::id()));
     }

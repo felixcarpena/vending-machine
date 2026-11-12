@@ -43,6 +43,10 @@ services:
         factory: ['Vending\Infrastructure\StartingSetupFromConfiguration', 'read']
         arguments: ['%vending.slots%', '%vending.starting_change%']
 
+    Vending\Domain\FewestCoinsChangeMaker: ~
+
+    Vending\Domain\ChangeMaker: '@Vending\Domain\FewestCoinsChangeMaker'
+
     Vending\Infrastructure\InMemoryVendingMachineRepository:
         arguments: []
 

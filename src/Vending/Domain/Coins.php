@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Vending\Domain;
 
+use LogicException;
+
 final readonly class Coins
 {
     /** @var list<Coin> */
@@ -29,6 +31,21 @@ final readonly class Coins
     public function plus(self $other): self
     {
         return new self(...$this->coins, ...$other->coins);
+    }
+
+    #[\NoDiscard]
+    public function minus(self $other): self
+    {
+        $remaining = $this->coins;
+        foreach ($other->coins as $coin) {
+            $position = array_search($coin, $remaining, true);
+            if ($position === false) {
+                throw new LogicException(sprintf('There is no %d cents coin to take.', $coin->value));
+            }
+            unset($remaining[$position]);
+        }
+
+        return new self(...$remaining);
     }
 
     public function countOf(Coin $coin): int

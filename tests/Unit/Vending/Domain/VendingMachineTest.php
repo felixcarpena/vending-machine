@@ -12,6 +12,7 @@ use Throwable;
 use Vending\Domain\AvailableChange;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
+use Vending\Domain\Event\ChangeReturned;
 use Vending\Domain\Event\CoinInserted;
 use Vending\Domain\Event\CoinsReturned;
 use Vending\Domain\Event\MachineServiced;
@@ -21,6 +22,7 @@ use Vending\Domain\Exception\ChangeNotAvailable;
 use Vending\Domain\Exception\EmptySlot;
 use Vending\Domain\Exception\NotEnoughMoney;
 use Vending\Domain\Exception\UnknownSlot;
+use Vending\Domain\FewestCoinsChangeMaker;
 use Vending\Domain\Money;
 use Vending\Domain\Product;
 use Vending\Domain\Selector;
@@ -220,7 +222,7 @@ final class VendingMachineTest extends TestCase
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
 
-        $machine->buy(Selector::of('JUICE'));
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
 
         self::assertEquals(
             [new ProductDispensed(VendingMachineMother::id(), Selector::of('JUICE'), Product::named('JUICE'), Money::fromCents(100))],
@@ -233,7 +235,7 @@ final class VendingMachineTest extends TestCase
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
 
-        $machine->buy(Selector::of('JUICE'));
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
 
         self::assertSame([10, 9, 10], self::stockOf($machine));
     }
@@ -243,9 +245,19 @@ final class VendingMachineTest extends TestCase
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
 
-        $machine->buy(Selector::of('JUICE'));
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
 
         self::assertEquals([Product::named('JUICE')], $machine->outputTray->products);
+    }
+
+    #[Test]
+    public function puts_the_change_in_the_output_tray(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('WATER'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(Coins::of(Coin::TwentyFiveCents, Coin::TenCents), $machine->outputTray->coins);
     }
 
     #[Test]
@@ -253,7 +265,7 @@ final class VendingMachineTest extends TestCase
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
 
-        $machine->buy(Selector::of('JUICE'));
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
 
         self::assertSame(1, $machine->availableChange->coins->countOf(Coin::OneHundredCents));
     }
@@ -263,7 +275,7 @@ final class VendingMachineTest extends TestCase
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
 
-        $machine->buy(Selector::of('JUICE'));
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
 
         self::assertEquals(Money::zero(), $machine->insertedMoney());
     }
@@ -277,7 +289,11 @@ final class VendingMachineTest extends TestCase
         yield 'a slot it does not have' => [$oneUnitInserted, 'COFFEE', UnknownSlot::class];
         yield 'not enough money' => [$aQuarterInserted, 'JUICE', NotEnoughMoney::class];
         yield 'an empty slot' => [self::soldOutOfJuice(), 'JUICE', EmptySlot::class];
-        yield 'change it cannot pay yet' => [clone $oneUnitInserted, 'WATER', ChangeNotAvailable::class];
+        yield 'change it cannot pay' => [
+            self::withoutChange(Coin::OneHundredCents),
+            'WATER',
+            ChangeNotAvailable::class,
+        ];
     }
 
     /** @param class-string<Throwable> $refusal */
@@ -290,7 +306,90 @@ final class VendingMachineTest extends TestCase
     ): void {
         $this->expectException($refusal);
 
-        $machine->buy(Selector::of($selector));
+        $machine->buy(Selector::of($selector), new FewestCoinsChangeMaker());
+    }
+
+    #[Test]
+    public function hands_back_the_inserted_coins_the_price_does_not_need(): void
+    {
+        $machine = self::withoutChange(Coin::OneHundredCents, Coin::TenCents);
+
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(Coins::of(Coin::TenCents), $machine->outputTray->coins);
+    }
+
+    #[Test]
+    public function keeps_only_the_inserted_coins_the_price_needs(): void
+    {
+        $machine = self::withoutChange(Coin::OneHundredCents, Coin::TenCents);
+
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(AvailableChange::of(Coins::of(Coin::OneHundredCents)), $machine->availableChange);
+    }
+
+    #[Test]
+    public function records_the_inserted_coins_it_hands_back(): void
+    {
+        $machine = self::withoutChange(Coin::OneHundredCents, Coin::TenCents);
+
+        $machine->buy(Selector::of('JUICE'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(
+            [
+                new ProductDispensed(VendingMachineMother::id(), Selector::of('JUICE'), Product::named('JUICE'), Money::fromCents(100)),
+                new CoinsReturned(VendingMachineMother::id(), Coins::of(Coin::TenCents)),
+            ],
+            $machine->pullEvents(),
+        );
+    }
+
+    #[Test]
+    public function keeps_more_of_the_inserted_coins_when_that_makes_the_change_payable(): void
+    {
+        $machine = self::withoutChange();
+        $machine->service(
+            StockLevels::of(['WATER' => 10]),
+            Coins::of(...array_fill(0, 6, Coin::TenCents)),
+        );
+        $machine->insertCoin(Coin::OneHundredCents);
+        $machine->insertCoin(Coin::TwentyFiveCents);
+
+        $machine->buy(Selector::of('WATER'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(Coins::of(...array_fill(0, 6, Coin::TenCents)), $machine->outputTray->coins);
+    }
+
+    #[Test]
+    public function pays_the_change_with_the_coins_it_already_had(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('WATER'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(
+            [
+                new ProductDispensed(VendingMachineMother::id(), Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65)),
+                new ChangeReturned(VendingMachineMother::id(), Coins::of(Coin::TwentyFiveCents, Coin::TenCents)),
+            ],
+            $machine->pullEvents(),
+        );
+    }
+
+    #[Test]
+    public function keeps_the_inserted_coins_and_gives_away_the_change(): void
+    {
+        $machine = VendingMachineMother::withCoinsInserted(Coin::OneHundredCents);
+
+        $machine->buy(Selector::of('WATER'), new FewestCoinsChangeMaker());
+
+        self::assertEquals(
+            VendingMachineMother::startingChange()
+                ->withdraw(Coins::of(Coin::TwentyFiveCents, Coin::TenCents))
+                ->deposit(Coins::of(Coin::OneHundredCents)),
+            $machine->availableChange,
+        );
     }
 
     #[Test]
@@ -301,6 +400,18 @@ final class VendingMachineTest extends TestCase
         self::attemptToBuy($machine, 'JUICE');
 
         self::assertEquals(VendingMachineMother::withCoinsInserted(Coin::TwentyFiveCents), $machine);
+    }
+
+    private static function withoutChange(Coin ...$inserted): VendingMachine
+    {
+        $machine = VendingMachineMother::started();
+        $machine->service(StockLevels::of(['WATER' => 10, 'JUICE' => 10, 'SODA' => 10]), Coins::of());
+        foreach ($inserted as $coin) {
+            $machine->insertCoin($coin);
+        }
+        $machine->pullEvents();
+
+        return $machine;
     }
 
     private static function soldOutOfJuice(): VendingMachine
@@ -318,7 +429,7 @@ final class VendingMachineTest extends TestCase
     private static function attemptToBuy(VendingMachine $machine, string $selector): void
     {
         try {
-            $machine->buy(Selector::of($selector));
+            $machine->buy(Selector::of($selector), new FewestCoinsChangeMaker());
         } catch (NotEnoughMoney|EmptySlot|ChangeNotAvailable|UnknownSlot) {
             return;
         }

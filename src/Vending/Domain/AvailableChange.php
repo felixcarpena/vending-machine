@@ -13,6 +13,17 @@ final readonly class AvailableChange
         return new self($coins);
     }
 
+    public function changeFor(Money $amount, ChangeMaker $changeMaker): ?Coins
+    {
+        return $changeMaker->changeFor($amount, $this->coins);
+    }
+
+    #[\NoDiscard]
+    public function withdraw(Coins $coins): self
+    {
+        return new self($this->coins->minus($coins));
+    }
+
     #[\NoDiscard]
     public function deposit(Coins $coins): self
     {

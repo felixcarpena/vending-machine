@@ -30,7 +30,6 @@ Feature: Service the machine
       | 0.25 | 3     |
       | 1    | 4     |
 
-  @wip
   Scenario: Anything not given is set to zero
     Given the customer entered "1, GET-WATER"
     When the service person enters "SERVICE WATER=4 0.25=2"
@@ -51,7 +50,6 @@ Feature: Service the machine
     When the service person enters "SERVICE WATER=1"
     Then the inserted money is "0.35"
 
-  @wip
   Scenario: The machine sells what servicing put in
     Given the service person entered "SERVICE SODA=1 0.25=2"
     When the customer enters "1, 1, GET-SODA"

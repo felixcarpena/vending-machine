@@ -119,6 +119,12 @@ final class VendingMachineContext implements Context
         Assert::assertStringContainsString(sprintf('Purchase refused: %s is sold out', $slot), $this->lastResponse);
     }
 
+    #[Then('the purchase is refused because the change cannot be paid')]
+    public function thePurchaseIsRefusedBecauseTheChangeCannotBePaid(): void
+    {
+        Assert::assertStringContainsString('Purchase refused: the change cannot be paid', $this->lastResponse);
+    }
+
     #[Then('the input :input is rejected as invalid')]
     public function theInputIsRejectedAsInvalid(string $input): void
     {

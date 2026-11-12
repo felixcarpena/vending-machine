@@ -56,4 +56,25 @@ final class EscrowTest extends TestCase
 
         self::assertEquals(Escrow::empty(), $escrow);
     }
+
+    #[Test]
+    public function lists_the_ways_to_cover_a_price_cheapest_first(): void
+    {
+        $escrow = Escrow::empty()->insert(Coin::OneHundredCents)->insert(Coin::TenCents);
+
+        $payments = $escrow->paymentsFor(Money::fromCents(100));
+
+        self::assertEquals(
+            [Coins::of(Coin::OneHundredCents), Coins::of(Coin::TenCents, Coin::OneHundredCents)],
+            $payments,
+        );
+    }
+
+    #[Test]
+    public function offers_no_way_to_cover_a_price_above_what_was_inserted(): void
+    {
+        $escrow = Escrow::empty()->insert(Coin::TwentyFiveCents);
+
+        self::assertSame([], $escrow->paymentsFor(Money::fromCents(65)));
+    }
 }

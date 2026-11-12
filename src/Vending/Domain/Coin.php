@@ -11,6 +11,11 @@ enum Coin: int
     case TwentyFiveCents = 25;
     case OneHundredCents = 100;
 
+    public function canBeGivenAsChange(): bool
+    {
+        return $this !== self::OneHundredCents;
+    }
+
     public function value(): Money
     {
         return Money::fromCents($this->value);

@@ -158,6 +158,16 @@ final class VendingMachineCommandTest extends KernelTestCase
     }
 
     #[Test]
+    public function hands_out_the_product_and_then_the_change(): void
+    {
+        $this->session->setInputs(['1, GET-WATER', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('-> WATER, 0.25, 0.10', $this->session->getDisplay());
+    }
+
+    #[Test]
     public function explains_why_a_purchase_is_refused(): void
     {
         $this->session->setInputs(['0.25, GET-JUICE', 'EXIT']);
