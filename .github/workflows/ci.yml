@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build the image and install the dependencies
+        run: make install
+
+      - name: Unit, application and integration tests
+        run: make test
+
+      - name: Static analysis
+        run: make analyse
+
+      - name: Coding standard
+        run: make lint
+
+      - name: Acceptance scenarios
+        run: make acceptance
