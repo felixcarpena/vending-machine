@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Vending\Domain;
 
+use Vending\Domain\Exception\UnknownSlot;
+
 final readonly class Slots
 {
     /** @param array<string, Slot> $slots */
@@ -17,6 +19,21 @@ final readonly class Slots
         }
 
         return new self($bySelector);
+    }
+
+    #[\NoDiscard]
+    public function restockedTo(StockLevels $stock): self
+    {
+        foreach ($stock->selectors() as $selector) {
+            if (!array_key_exists($selector->value, $this->slots)) {
+                throw UnknownSlot::of($selector);
+            }
+        }
+
+        return new self(array_map(
+            static fn(Slot $slot): Slot => $slot->withStock($stock->unitsOf($slot->selector)),
+            $this->slots,
+        ));
     }
 
     /** @return list<Slot> */

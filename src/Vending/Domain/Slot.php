@@ -18,4 +18,10 @@ final readonly class Slot
             throw NegativeStock::of($selector, $stock);
         }
     }
+
+    #[\NoDiscard]
+    public function withStock(int $stock): self
+    {
+        return new self($this->selector, $this->product, $this->price, $stock);
+    }
 }

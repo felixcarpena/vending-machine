@@ -15,6 +15,9 @@ services:
     Vending\Application\StartMachine\StartMachineHandler:
         tags: [{ name: messenger.message_handler, bus: command.bus }]
 
+    Vending\Application\ServiceMachine\ServiceMachineHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
     Vending\Application\GetMachineContents\GetMachineContentsHandler:
         tags: [{ name: messenger.message_handler, bus: query.bus }]
 
@@ -36,8 +39,12 @@ services:
     Shared\Infrastructure\Bus\MessengerQueryBus:
         arguments: ['@query.bus']
 
+    Shared\Infrastructure\Bus\MessengerEventBus:
+        arguments: ['@event.bus']
+
     Shared\Application\Bus\CommandBus: '@Shared\Infrastructure\Bus\MessengerCommandBus'
     Shared\Application\Bus\QueryBus: '@Shared\Infrastructure\Bus\MessengerQueryBus'
+    Shared\Application\Bus\EventBus: '@Shared\Infrastructure\Bus\MessengerEventBus'
 
     Vending\UI\Cli\VendingMachineCommand:
         autoconfigure: true

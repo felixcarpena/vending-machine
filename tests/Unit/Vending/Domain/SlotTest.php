@@ -21,4 +21,27 @@ final class SlotTest extends TestCase
 
         new Slot(Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65), -1);
     }
+
+    #[Test]
+    public function keeps_its_selector_product_and_price_when_restocked(): void
+    {
+        $slot = new Slot(Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65), 10);
+
+        $restocked = $slot->withStock(3);
+
+        self::assertEquals(
+            new Slot(Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65), 3),
+            $restocked,
+        );
+    }
+
+    #[Test]
+    public function stays_unchanged_when_restocked(): void
+    {
+        $slot = new Slot(Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65), 10);
+
+        (void) $slot->withStock(3);
+
+        self::assertSame(10, $slot->stock);
+    }
 }

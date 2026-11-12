@@ -6,11 +6,13 @@ namespace Tests\Unit\Vending\Domain;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Vending\Domain\Exception\UnknownSlot;
 use Vending\Domain\Money;
 use Vending\Domain\Product;
 use Vending\Domain\Selector;
 use Vending\Domain\Slot;
 use Vending\Domain\Slots;
+use Vending\Domain\StockLevels;
 
 final class SlotsTest extends TestCase
 {
@@ -30,5 +32,36 @@ final class SlotsTest extends TestCase
         $moreWater = new Slot(Selector::of('A2'), Product::named('WATER'), Money::fromCents(70), 4);
 
         self::assertSame([$water, $moreWater], Slots::of($water, $moreWater)->all());
+    }
+
+    #[Test]
+    public function restock_every_slot_and_empty_the_ones_not_mentioned(): void
+    {
+        $slots = self::waterAnd(new Slot(Selector::of('JUICE'), Product::named('JUICE'), Money::fromCents(100), 3));
+
+        $restocked = $slots->restockedTo(StockLevels::of(['JUICE' => 7]));
+
+        self::assertSame([0, 7], self::stockOf($restocked));
+    }
+
+    #[Test]
+    public function refuse_to_restock_a_slot_they_do_not_have(): void
+    {
+        $this->expectException(UnknownSlot::class);
+
+        (void) self::waterAnd()->restockedTo(StockLevels::of(['COFFEE' => 1]));
+    }
+
+    private static function waterAnd(Slot ...$others): Slots
+    {
+        $water = new Slot(Selector::of('WATER'), Product::named('WATER'), Money::fromCents(65), 10);
+
+        return Slots::of($water, ...$others);
+    }
+
+    /** @return list<int> */
+    private static function stockOf(Slots $slots): array
+    {
+        return array_map(static fn(Slot $slot): int => $slot->stock, $slots->all());
     }
 }

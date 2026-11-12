@@ -9,7 +9,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Tests\Mother\VendingMachineMother;
 use Vending\Application\GetMachineContents\GetMachineContents;
+use Vending\Application\ServiceMachine\ServiceMachine;
+use Vending\Domain\Coin;
+use Vending\Domain\Coins;
+use Vending\Domain\StockLevels;
 use Vending\UI\Cli\Input\ActionParser;
+use Vending\UI\Cli\Input\InvalidLine;
 
 final class ActionParserTest extends TestCase
 {
@@ -27,6 +32,29 @@ final class ActionParserTest extends TestCase
         $actions = ActionParser::actionsIn(' , 1,, ');
 
         self::assertSame(['1'], $actions);
+    }
+
+    #[Test]
+    #[DataProvider('serviceLinesWithAComma')]
+    public function reads_a_service_line_with_a_comma_as_invalid(string $line): void
+    {
+        self::assertEquals(new InvalidLine(trim($line)), ActionParser::actionsIn($line));
+    }
+
+    /** @return array<string, array{string}> */
+    public static function serviceLinesWithAComma(): array
+    {
+        return [
+            'another action after it' => ["SERVICE WATER=1, 0.05=2\n"],
+            'another action before it' => ["0.25, SERVICE WATER=1\n"],
+            'a comma at the end' => ["SERVICE WATER=1,\n"],
+        ];
+    }
+
+    #[Test]
+    public function reads_a_service_alone_on_its_line_as_one_action(): void
+    {
+        self::assertSame(['SERVICE WATER=1'], ActionParser::actionsIn(" SERVICE WATER=1 \n"));
     }
 
     #[Test]
@@ -64,5 +92,49 @@ final class ActionParserTest extends TestCase
     public function reads_nothing_from_an_unknown_action(): void
     {
         self::assertNull(ActionParser::messageFor('COFFEE', VendingMachineMother::id()));
+    }
+
+    #[Test]
+    public function reads_the_stock_of_each_slot_in_a_service(): void
+    {
+        $message = ActionParser::messageFor('SERVICE WATER=5 SODA1=0', VendingMachineMother::id());
+
+        self::assertEquals(
+            new ServiceMachine(VendingMachineMother::id(), StockLevels::of(['WATER' => 5, 'SODA1' => 0]), Coins::of()),
+            $message,
+        );
+    }
+
+    #[Test]
+    public function reads_the_number_of_each_coin_in_a_service(): void
+    {
+        $message = ActionParser::messageFor('SERVICE 0.25=2 1=1', VendingMachineMother::id());
+
+        self::assertEquals(
+            new ServiceMachine(
+                VendingMachineMother::id(),
+                StockLevels::of([]),
+                Coins::of(Coin::TwentyFiveCents, Coin::TwentyFiveCents, Coin::OneHundredCents),
+            ),
+            $message,
+        );
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function servicesThatAreNotValid(): iterable
+    {
+        yield 'a negative count' => ['SERVICE WATER=-1'];
+        yield 'a count in words' => ['SERVICE WATER=ten'];
+        yield 'a coin the machine does not take' => ['SERVICE 0.50=2'];
+        yield 'a lower case selector' => ['SERVICE water=2'];
+        yield 'no space after the action' => ['SERVICEWATER=2'];
+        yield 'nothing to service' => ['SERVICE'];
+    }
+
+    #[Test]
+    #[DataProvider('servicesThatAreNotValid')]
+    public function reads_nothing_from_a_service_that_is_not_valid(string $action): void
+    {
+        self::assertNull(ActionParser::messageFor($action, VendingMachineMother::id()));
     }
 }

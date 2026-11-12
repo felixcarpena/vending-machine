@@ -28,7 +28,7 @@ final class VendingMachineCommandTest extends KernelTestCase
         $this->session->execute([]);
 
         self::assertStringContainsString(
-            "Vending machine ready.\nActions: STATUS | EXIT",
+            "Vending machine ready.\nActions: SERVICE | STATUS | EXIT",
             $this->session->getDisplay(),
         );
     }
@@ -66,6 +66,53 @@ final class VendingMachineCommandTest extends KernelTestCase
         $this->session->execute([]);
 
         self::assertStringContainsString('  Coins: 0.05 x10, 0.10 x10, 0.25 x10, 1 x0', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function services_the_machine(): void
+    {
+        $this->session->setInputs(['SERVICE WATER=5 0.25=1', 'STATUS', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString(
+            "  WATER holds WATER at 0.65 (5 left)\n"
+            . "  JUICE holds JUICE at 1.00 (0 left)\n"
+            . "  SODA holds SODA at 1.50 (0 left)\n"
+            . '  Coins: 0.05 x0, 0.10 x0, 0.25 x1, 1 x0',
+            $this->session->getDisplay(),
+        );
+    }
+
+    #[Test]
+    public function confirms_a_service(): void
+    {
+        $this->session->setInputs(['SERVICE WATER=5', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('  Machine serviced.', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function reports_a_service_it_cannot_carry_out_as_invalid_input(): void
+    {
+        $this->session->setInputs(['SERVICE COFFEE=3', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('  Invalid input: SERVICE COFFEE=3', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function reports_a_service_line_with_a_comma_as_invalid_input_as_a_whole(): void
+    {
+        $this->session->setInputs(['SERVICE WATER=1, 0.05=2', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('  Invalid input: SERVICE WATER=1, 0.05=2', $this->session->getDisplay());
+        self::assertStringNotContainsString('Machine serviced.', $this->session->getDisplay());
     }
 
     #[Test]

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Shared\Infrastructure\Bus;
 
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use ReflectionClass;
+use Shared\Domain\DomainEvent;
+use Shared\Domain\Refusal;
 use Stringable;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
@@ -25,14 +28,22 @@ final readonly class LoggingMiddleware implements MiddlewareInterface
         try {
             $handled = $stack->next()->handle($envelope, $stack);
         } catch (HandlerFailedException $failure) {
-            $reason = ($failure->getPrevious() ?? $failure)->getMessage();
-            $this->logger->error(sprintf('%s failed: %s', $name, $reason), self::fieldsOf($message));
+            $reason = $failure->getPrevious() ?? $failure;
+            $this->logger->log(
+                $reason instanceof Refusal ? LogLevel::NOTICE : LogLevel::ERROR,
+                sprintf('%s failed: %s', $name, $reason->getMessage()),
+                self::fieldsOf($message),
+            );
 
             throw $failure;
         }
 
         $duration = (hrtime(true) - $startedAt) / 1_000_000;
-        $this->logger->info(sprintf('%s handled in %.2f ms', $name, $duration), self::fieldsOf($message));
+        $this->logger->log(
+            $message instanceof DomainEvent ? LogLevel::DEBUG : LogLevel::INFO,
+            sprintf('%s handled in %.2f ms', $name, $duration),
+            self::fieldsOf($message),
+        );
 
         return $handled;
     }
@@ -41,8 +52,8 @@ final readonly class LoggingMiddleware implements MiddlewareInterface
     private static function fieldsOf(object $message): array
     {
         return array_map(
-            static fn(mixed $value): string => $value instanceof Stringable ? (string) $value : get_debug_type($value),
-            get_object_vars($message),
+            static fn(Stringable $value): string => (string) $value,
+            array_filter(get_object_vars($message), static fn(mixed $value): bool => $value instanceof Stringable),
         );
     }
 }

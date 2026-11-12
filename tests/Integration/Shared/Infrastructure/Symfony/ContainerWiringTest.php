@@ -8,12 +8,14 @@ use LogicException;
 use Monolog\Handler\TestHandler;
 use PHPUnit\Framework\Attributes\Test;
 use Shared\Application\Bus\CommandBus;
+use Shared\Application\Bus\EventBus;
 use Shared\Application\Bus\QueryBus;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Tests\Mother\VendingMachineMother;
 use Vending\Application\GetMachineContents\GetMachineContents;
 use Vending\Application\GetMachineContents\GetMachineContentsHandler;
 use Vending\Application\StartMachine\StartMachine;
+use Vending\Domain\Event\MachineServiced;
 use Vending\Domain\VendingMachineRepository;
 
 final class ContainerWiringTest extends KernelTestCase
@@ -56,6 +58,14 @@ final class ContainerWiringTest extends KernelTestCase
         self::service(QueryBus::class)->ask(new GetMachineContents(VendingMachineMother::id()));
 
         self::assertTrue(self::service(TestHandler::class)->hasInfoThatContains('GetMachineContents handled in'));
+    }
+
+    #[Test]
+    public function logs_every_event_the_event_bus_publishes(): void
+    {
+        self::service(EventBus::class)->publish(new MachineServiced(VendingMachineMother::id()));
+
+        self::assertTrue(self::service(TestHandler::class)->hasDebugThatContains('MachineServiced handled in'));
     }
 
     /**

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Integration\Shared\Infrastructure\Bus;
 
 use DomainException;
+use LogicException;
 use Monolog\Handler\TestHandler;
 use Monolog\Logger;
 use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\DomainEvent;
+use Shared\Domain\Refusal;
 use Shared\Infrastructure\Bus\LoggingMiddleware;
 use Stringable;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
@@ -28,6 +31,17 @@ final class LoggingMiddlewareTest extends TestCase
         self::busWhere($message, static function (): void {}, $recorded)->dispatch($message);
 
         self::assertSame(['INFO'], self::levelsIn($recorded));
+    }
+
+    #[Test]
+    public function logs_a_published_event_as_debug(): void
+    {
+        $recorded = new TestHandler();
+        $event = new class implements DomainEvent {};
+
+        self::busWhere($event, static function (): void {}, $recorded)->dispatch($event);
+
+        self::assertSame(['DEBUG'], self::levelsIn($recorded));
     }
 
     #[Test]
@@ -65,18 +79,77 @@ final class LoggingMiddlewareTest extends TestCase
     }
 
     #[Test]
-    public function logs_a_failed_message_as_an_error_with_the_reason(): void
+    public function leaves_out_the_fields_it_cannot_write_as_text(): void
+    {
+        $recorded = new TestHandler();
+        $message = new class {
+            /** @var list<int> */
+            public array $counts = [1, 2];
+        };
+
+        self::busWhere($message, static function (): void {}, $recorded)->dispatch($message);
+
+        self::assertSame([], self::onlyRecordIn($recorded)->context);
+    }
+
+    #[Test]
+    public function logs_a_business_refusal_as_a_notice(): void
     {
         $recorded = new TestHandler();
         $message = new class {};
-        $bus = self::busWhere($message, static fn(): never => throw new DomainException('refused'), $recorded);
+        $bus = self::busWhere($message, static fn(): never => throw new class ('refused') extends Refusal {}, $recorded);
 
         try {
             $bus->dispatch($message);
         } catch (HandlerFailedException) {
         }
 
-        self::assertStringEndsWith('failed: refused', self::onlyRecordIn($recorded)->message);
+        self::assertSame(['NOTICE'], self::levelsIn($recorded));
+    }
+
+    #[Test]
+    public function logs_a_domain_exception_that_is_not_a_refusal_as_an_error(): void
+    {
+        $recorded = new TestHandler();
+        $message = new class {};
+        $bus = self::busWhere($message, static fn(): never => throw new DomainException('broken'), $recorded);
+
+        try {
+            $bus->dispatch($message);
+        } catch (HandlerFailedException) {
+        }
+
+        self::assertSame(['ERROR'], self::levelsIn($recorded));
+    }
+
+    #[Test]
+    public function logs_an_unexpected_failure_as_an_error(): void
+    {
+        $recorded = new TestHandler();
+        $message = new class {};
+        $bus = self::busWhere($message, static fn(): never => throw new LogicException('broken'), $recorded);
+
+        try {
+            $bus->dispatch($message);
+        } catch (HandlerFailedException) {
+        }
+
+        self::assertSame(['ERROR'], self::levelsIn($recorded));
+    }
+
+    #[Test]
+    public function says_why_the_message_failed(): void
+    {
+        $recorded = new TestHandler();
+        $message = new class {};
+        $bus = self::busWhere($message, static fn(): never => throw new LogicException('broken'), $recorded);
+
+        try {
+            $bus->dispatch($message);
+        } catch (HandlerFailedException) {
+        }
+
+        self::assertStringEndsWith('failed: broken', self::onlyRecordIn($recorded)->message);
     }
 
     #[Test]
