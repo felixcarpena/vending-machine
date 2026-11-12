@@ -14,10 +14,10 @@ use Vending\Infrastructure\InMemoryVendingMachineRepository;
 final class StartMachineHandlerTest extends TestCase
 {
     #[Test]
-    public function saves_a_new_machine_with_the_given_id(): void
+    public function saves_a_machine_started_from_the_starting_setup(): void
     {
         $machines = new InMemoryVendingMachineRepository();
-        $machineStarter = new StartMachineHandler($machines);
+        $machineStarter = new StartMachineHandler(VendingMachineMother::startingSetup(), $machines);
 
         $machineStarter(new StartMachine(VendingMachineMother::id()));
 

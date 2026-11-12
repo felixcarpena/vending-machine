@@ -6,5 +6,8 @@ namespace Vending\Domain;
 
 final class VendingMachine
 {
-    public function __construct(public readonly VendingMachineId $id) {}
+    public function __construct(
+        public readonly VendingMachineId $id,
+        public readonly Slots $slots,
+    ) {}
 }

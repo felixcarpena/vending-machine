@@ -27,7 +27,10 @@ final class VendingMachineCommandTest extends KernelTestCase
 
         $this->session->execute([]);
 
-        self::assertStringContainsString("Vending machine ready.\nActions: EXIT", $this->session->getDisplay());
+        self::assertStringContainsString(
+            "Vending machine ready.\nActions: STATUS | EXIT",
+            $this->session->getDisplay(),
+        );
     }
 
     #[Test]
@@ -38,6 +41,21 @@ final class VendingMachineCommandTest extends KernelTestCase
         $this->session->execute([]);
 
         self::assertStringContainsString("Invalid input: COFFEE\n  Invalid input: TEA", $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function shows_each_slot_with_its_product_price_and_stock_on_status(): void
+    {
+        $this->session->setInputs(['STATUS', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString(
+            "  WATER holds WATER at 0.65 (10 left)\n"
+            . "  JUICE holds JUICE at 1.00 (10 left)\n"
+            . "  SODA holds SODA at 1.50 (10 left)",
+            $this->session->getDisplay(),
+        );
     }
 
     #[Test]

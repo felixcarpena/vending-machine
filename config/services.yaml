@@ -1,9 +1,22 @@
+parameters:
+    vending.slots:
+        WATER: { product: WATER, price: 65, stock: 10 }
+        JUICE: { product: JUICE, price: 100, stock: 10 }
+        SODA: { product: SODA, price: 150, stock: 10 }
+
 services:
     _defaults:
         autowire: true
 
     Vending\Application\StartMachine\StartMachineHandler:
         tags: [{ name: messenger.message_handler, bus: command.bus }]
+
+    Vending\Application\GetMachineContents\GetMachineContentsHandler:
+        tags: [{ name: messenger.message_handler, bus: query.bus }]
+
+    Vending\Domain\StartingSetup:
+        factory: ['Vending\Infrastructure\StartingSetupFromConfiguration', 'read']
+        arguments: ['%vending.slots%']
 
     Vending\Infrastructure\InMemoryVendingMachineRepository:
         arguments: []
@@ -16,7 +29,11 @@ services:
     Shared\Infrastructure\Bus\MessengerCommandBus:
         arguments: ['@command.bus']
 
+    Shared\Infrastructure\Bus\MessengerQueryBus:
+        arguments: ['@query.bus']
+
     Shared\Application\Bus\CommandBus: '@Shared\Infrastructure\Bus\MessengerCommandBus'
+    Shared\Application\Bus\QueryBus: '@Shared\Infrastructure\Bus\MessengerQueryBus'
 
     Vending\UI\Cli\VendingMachineCommand:
         autoconfigure: true

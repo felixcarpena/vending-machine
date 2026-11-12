@@ -7,6 +7,8 @@ namespace Tests\Unit\Vending\UI\Cli\Input;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Tests\Mother\VendingMachineMother;
+use Vending\Application\GetMachineContents\GetMachineContents;
 use Vending\UI\Cli\Input\ActionParser;
 
 final class ActionParserTest extends TestCase
@@ -48,5 +50,19 @@ final class ActionParserTest extends TestCase
     public function does_not_exit_when_exit_comes_with_other_actions(): void
     {
         self::assertFalse(ActionParser::isExit('1, EXIT'));
+    }
+
+    #[Test]
+    public function reads_status_as_asking_for_the_machine_contents(): void
+    {
+        $message = ActionParser::messageFor('STATUS', VendingMachineMother::id());
+
+        self::assertEquals(new GetMachineContents(VendingMachineMother::id()), $message);
+    }
+
+    #[Test]
+    public function reads_nothing_from_an_unknown_action(): void
+    {
+        self::assertNull(ActionParser::messageFor('COFFEE', VendingMachineMother::id()));
     }
 }

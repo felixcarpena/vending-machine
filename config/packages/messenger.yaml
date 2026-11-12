@@ -5,3 +5,6 @@ framework:
             command.bus:
                 middleware:
                     - Shared\Infrastructure\Bus\LoggingMiddleware
+            query.bus:
+                middleware:
+                    - Shared\Infrastructure\Bus\LoggingMiddleware

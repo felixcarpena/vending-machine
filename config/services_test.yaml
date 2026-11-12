@@ -3,6 +3,10 @@ services:
         alias: Shared\Infrastructure\Bus\MessengerCommandBus
         public: true
 
+    Shared\Application\Bus\QueryBus:
+        alias: Shared\Infrastructure\Bus\MessengerQueryBus
+        public: true
+
     Vending\Domain\VendingMachineRepository:
         alias: Vending\Infrastructure\InMemoryVendingMachineRepository
         public: true

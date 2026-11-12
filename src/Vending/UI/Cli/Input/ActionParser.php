@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Vending\UI\Cli\Input;
 
+use Vending\Application\GetMachineContents\GetMachineContents;
+use Vending\Domain\VendingMachineId;
+
 final class ActionParser
 {
+    public const string STATUS = 'STATUS';
     public const string EXIT = 'EXIT';
 
     public static function isExit(string $line): bool
@@ -19,5 +23,13 @@ final class ActionParser
         $actions = array_map(trim(...), explode(',', $line));
 
         return array_values(array_filter($actions, static fn(string $action): bool => $action !== ''));
+    }
+
+    public static function messageFor(string $action, VendingMachineId $machineId): ?GetMachineContents
+    {
+        return match ($action) {
+            self::STATUS => new GetMachineContents($machineId),
+            default => null,
+        };
     }
 }

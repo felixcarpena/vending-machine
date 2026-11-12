@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Tests\Mother\VendingMachineMother;
 use Vending\Domain\Exception\VendingMachineNotFound;
-use Vending\Domain\VendingMachine;
 use Vending\Domain\VendingMachineId;
 use Vending\Infrastructure\InMemoryVendingMachineRepository;
 
@@ -19,7 +18,7 @@ final class InMemoryVendingMachineRepositoryTest extends TestCase
     {
         $machine = VendingMachineMother::started();
         $machines = new InMemoryVendingMachineRepository(
-            new VendingMachine(VendingMachineId::of('0193b4e2-9f00-7a00-9b00-000000000002')),
+            VendingMachineMother::startedAs(VendingMachineId::of('0193b4e2-9f00-7a00-9b00-000000000002')),
             $machine,
         );
 
