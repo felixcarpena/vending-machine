@@ -38,6 +38,7 @@ Decided here, because the statement does not say:
 11. The inserted coins never pay change. To cover the price, the machine keeps the cheapest choice of inserted coins whose change it can pay from the coins it already had, and hands the other inserted coins back as they were inserted. A customer who pays 1.10 for a 1.00 product, when the machine has no 0.10, gets the product and their own 0.10 back. The sale is refused only when no choice of inserted coins leaves change the machine can pay.
 12. Returning the money gives back the coins exactly as they were inserted. A 1 coin comes back as a 1 coin. Rule 5 is about change, not about returning the customer's own coins.
 13. The machine starts with a configured stock and available change, so it can sell before anyone services it. The starting values are configuration, chosen so the statement's examples work straight away.
+14. When two choices of inserted coins cover the price with the same amount, the machine keeps the one with the larger coins, which is also the one with the fewest coins, and hands back the smaller ones. The change is the same either way, so the customer gets the same value back; keeping the larger coins is simply the first choice the machine finds. Keeping the smaller ones instead would leave the machine more coins to pay change with later. That is a business choice, and changing it changes only this rule and the order in which the escrow walks the inserted coins.
 
 ## Use cases
 

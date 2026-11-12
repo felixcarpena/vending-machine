@@ -62,6 +62,12 @@ final class ActionParserTest extends TestCase
     }
 
     #[Test]
+    public function reads_nothing_from_a_service_quantity_above_three_digits(): void
+    {
+        self::assertNull(ActionParser::messageFor('SERVICE WATER=1000', VendingMachineMother::id()));
+    }
+
+    #[Test]
     #[DataProvider('exitLines')]
     public function recognises_the_exit_line(string $line): void
     {

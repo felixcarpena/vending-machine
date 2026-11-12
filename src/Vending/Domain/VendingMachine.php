@@ -84,8 +84,13 @@ final class VendingMachine extends AggregateRoot
     /** @return array{Coins, Coins} */
     private function paymentFor(Money $price, ChangeMaker $changeMaker): array
     {
+        $payable = $this->availableChange->payableUpTo($this->escrow->total()->subtract($price), $changeMaker);
         foreach ($this->escrow->paymentsFor($price) as $payment) {
-            $change = $this->availableChange->changeFor($payment->total()->subtract($price), $changeMaker);
+            $due = $payment->total()->subtract($price);
+            if (!$payable->includes($due)) {
+                continue;
+            }
+            $change = $this->availableChange->changeFor($due, $changeMaker);
             if ($change !== null) {
                 return [$payment, $change];
             }

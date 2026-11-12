@@ -76,6 +76,7 @@ Feature: Service the machine
       | SERVICE WATER=-1        |
       | SERVICE 0.50=2          |
       | SERVICE WATER=ten       |
+      | SERVICE WATER=1000      |
       | SERVICE WATER=1, 0.05=2 |
       | 0.25, SERVICE WATER=1   |
       | SERVICE WATER=1,        |

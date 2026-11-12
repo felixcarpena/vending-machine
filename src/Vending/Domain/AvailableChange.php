@@ -18,6 +18,11 @@ final readonly class AvailableChange
         return $changeMaker->changeFor($amount, $this->coins);
     }
 
+    public function payableUpTo(Money $limit, ChangeMaker $changeMaker): PayableChange
+    {
+        return $changeMaker->payableUpTo($limit, $this->coins);
+    }
+
     #[\NoDiscard]
     public function withdraw(Coins $coins): self
     {

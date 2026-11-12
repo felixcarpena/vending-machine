@@ -393,6 +393,40 @@ final class VendingMachineTest extends TestCase
     }
 
     #[Test]
+    public function refuses_at_once_when_no_way_to_pay_leaves_change_it_can_pay(): void
+    {
+        $machine = self::withChangeAndCoinsInserted(
+            Coins::of(...array_fill(0, 999, Coin::TwentyFiveCents)),
+            ...array_fill(0, 60, Coin::OneHundredCents),
+        );
+
+        $this->expectException(ChangeNotAvailable::class);
+
+        $machine->buy(Selector::of('WATER'), new FewestCoinsChangeMaker());
+    }
+
+    #[Test]
+    public function finds_the_change_it_can_pay_among_many_inserted_coins(): void
+    {
+        $machine = self::withChangeAndCoinsInserted(
+            Coins::of(Coin::TenCents, ...array_fill(0, 999, Coin::TwentyFiveCents)),
+            ...array_fill(0, 60, Coin::OneHundredCents),
+        );
+
+        $machine->buy(Selector::of('WATER'), new FewestCoinsChangeMaker());
+
+        $handedBack = $machine->outputTray->coins;
+        self::assertSame(
+            [1, 1, 59],
+            [
+                $handedBack->countOf(Coin::TwentyFiveCents),
+                $handedBack->countOf(Coin::TenCents),
+                $handedBack->countOf(Coin::OneHundredCents),
+            ],
+        );
+    }
+
+    #[Test]
     public function changes_nothing_when_it_refuses_a_purchase(): void
     {
         $machine = VendingMachineMother::withCoinsInserted(Coin::TwentyFiveCents);
@@ -406,6 +440,18 @@ final class VendingMachineTest extends TestCase
     {
         $machine = VendingMachineMother::started();
         $machine->service(StockLevels::of(['WATER' => 10, 'JUICE' => 10, 'SODA' => 10]), Coins::of());
+        foreach ($inserted as $coin) {
+            $machine->insertCoin($coin);
+        }
+        $machine->pullEvents();
+
+        return $machine;
+    }
+
+    private static function withChangeAndCoinsInserted(Coins $change, Coin ...$inserted): VendingMachine
+    {
+        $machine = VendingMachineMother::started();
+        $machine->service(StockLevels::of(['WATER' => 10, 'JUICE' => 10, 'SODA' => 10]), $change);
         foreach ($inserted as $coin) {
             $machine->insertCoin($coin);
         }

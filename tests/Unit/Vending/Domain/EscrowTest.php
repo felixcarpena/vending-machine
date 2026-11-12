@@ -65,8 +65,8 @@ final class EscrowTest extends TestCase
         $payments = $escrow->paymentsFor(Money::fromCents(100));
 
         self::assertEquals(
-            [Coins::of(Coin::OneHundredCents), Coins::of(Coin::TenCents, Coin::OneHundredCents)],
-            $payments,
+            [Coins::of(Coin::OneHundredCents), Coins::of(Coin::OneHundredCents, Coin::TenCents)],
+            iterator_to_array($payments, false),
         );
     }
 
@@ -75,6 +75,43 @@ final class EscrowTest extends TestCase
     {
         $escrow = Escrow::empty()->insert(Coin::TwentyFiveCents);
 
-        self::assertSame([], $escrow->paymentsFor(Money::fromCents(65)));
+        self::assertSame([], iterator_to_array($escrow->paymentsFor(Money::fromCents(65)), false));
+    }
+
+    #[Test]
+    public function never_counts_an_inserted_coin_twice(): void
+    {
+        $escrow = Escrow::empty()->insert(Coin::TwentyFiveCents)->insert(Coin::TenCents);
+
+        self::assertSame([], iterator_to_array($escrow->paymentsFor(Money::fromCents(50)), false));
+    }
+
+    #[Test]
+    public function keeps_the_largest_coins_when_two_ways_cover_the_same_amount(): void
+    {
+        $escrow = Escrow::empty()
+            ->insert(Coin::TenCents)
+            ->insert(Coin::TenCents)
+            ->insert(Coin::FiveCents)
+            ->insert(Coin::TwentyFiveCents);
+
+        $cheapest = iterator_to_array($escrow->paymentsFor(Money::fromCents(25)), false)[0];
+
+        self::assertEquals(Coins::of(Coin::TwentyFiveCents), $cheapest);
+    }
+
+    #[Test]
+    public function finds_the_cheapest_way_among_a_hundred_inserted_coins(): void
+    {
+        $escrow = Escrow::empty();
+        foreach (Coin::cases() as $coin) {
+            for ($inserted = 0; $inserted < 25; ++$inserted) {
+                $escrow = $escrow->insert($coin);
+            }
+        }
+
+        $cheapest = iterator_to_array($escrow->paymentsFor(Money::fromCents(65)), false)[0];
+
+        self::assertEquals(Money::fromCents(65), $cheapest->total());
     }
 }

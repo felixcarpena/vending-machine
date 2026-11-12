@@ -77,7 +77,7 @@ final class ActionParser
         $stock = [];
         $change = [];
         foreach ($words as $word) {
-            if (preg_match('/^(?<key>[^=]+)=(?<count>\d+)$/', $word, $match) !== 1) {
+            if (preg_match('/^(?<key>[^=]+)=(?<count>\d{1,3})$/', $word, $match) !== 1) {
                 return null;
             }
             $count = (int) $match['count'];

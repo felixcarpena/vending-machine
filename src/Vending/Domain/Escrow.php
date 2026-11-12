@@ -19,24 +19,37 @@ final readonly class Escrow
         return new self($this->coins->add($coin));
     }
 
-    /** @return list<Coins> */
-    public function paymentsFor(Money $price): array
+    /** @return iterable<Coins> */
+    public function paymentsFor(Money $price): iterable
     {
-        $payments = [Coins::of()];
-        foreach (Coin::cases() as $coin) {
-            $withThisCoin = [];
-            foreach ($payments as $payment) {
-                for ($count = 0; $count <= $this->coins->countOf($coin); ++$count) {
-                    $withThisCoin[] = $payment->plus(Coins::of(...array_fill(0, $count, $coin)));
+        $countsByTotal = [0 => []];
+        foreach ($this->coins->largestFirst() as $coin) {
+            foreach ($countsByTotal as $total => $counts) {
+                $withThisCoin = $total + $coin->value;
+                if (!array_key_exists($withThisCoin, $countsByTotal)) {
+                    $counts[$coin->value] = ($counts[$coin->value] ?? 0) + 1;
+                    $countsByTotal[$withThisCoin] = $counts;
                 }
             }
-            $payments = $withThisCoin;
+        }
+        ksort($countsByTotal);
+
+        foreach ($countsByTotal as $total => $counts) {
+            if ($total >= $price->cents) {
+                yield self::coinsFrom($counts);
+            }
+        }
+    }
+
+    /** @param array<int, int> $counts */
+    private static function coinsFrom(array $counts): Coins
+    {
+        $coins = [];
+        foreach ($counts as $cents => $count) {
+            $coins = [...$coins, ...array_fill(0, $count, Coin::from($cents))];
         }
 
-        $enough = array_filter($payments, static fn(Coins $payment): bool => !$payment->total()->isLessThan($price));
-        usort($enough, static fn(Coins $one, Coins $other): int => $one->total()->cents <=> $other->total()->cents);
-
-        return $enough;
+        return Coins::of(...$coins);
     }
 
     public function isEmpty(): bool

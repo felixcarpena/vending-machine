@@ -7,4 +7,6 @@ namespace Vending\Domain;
 interface ChangeMaker
 {
     public function changeFor(Money $amount, Coins $available): ?Coins;
+
+    public function payableUpTo(Money $limit, Coins $available): PayableChange;
 }
