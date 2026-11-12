@@ -6,6 +6,4 @@ namespace Tests\Behat;
 
 use Behat\Behat\Context\Context;
 
-final class VendingMachineContext implements Context
-{
-}
+final class VendingMachineContext implements Context {}

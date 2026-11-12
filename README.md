@@ -12,6 +12,9 @@ Docker and make. PHP and Composer run inside the container, so nothing else is n
 
 ```
 make install       # build the image and install the dependencies
+make test          # run the PHPUnit suites
+make analyse       # run static analysis
+make lint          # check the coding standard (make fix applies it)
 make acceptance    # run the acceptance scenarios that are already implemented
 make spec-status   # list the scenarios still to implement, tagged @wip
 make shell         # open a shell in the container

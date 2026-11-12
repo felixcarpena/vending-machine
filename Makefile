@@ -9,7 +9,7 @@ RUN = docker run --rm -i $(TTY) \
 	$(if $(DEBUG),--env XDEBUG_TRIGGER=1) \
 	$(IMAGE)
 
-.PHONY: build install shell acceptance spec-status
+.PHONY: build install shell test analyse lint fix acceptance spec-status
 
 build:
 	docker build --target dev --tag $(IMAGE) .
@@ -19,6 +19,18 @@ install: build
 
 shell:
 	$(RUN) bash
+
+test:
+	$(RUN) vendor/bin/phpunit --testdox
+
+analyse:
+	$(RUN) vendor/bin/phpstan analyse --no-progress
+
+lint:
+	$(RUN) vendor/bin/php-cs-fixer check --diff
+
+fix:
+	$(RUN) vendor/bin/php-cs-fixer fix
 
 acceptance:
 	$(RUN) vendor/bin/behat
