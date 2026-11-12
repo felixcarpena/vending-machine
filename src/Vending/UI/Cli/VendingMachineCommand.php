@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vending\UI\Cli;
 
+use Shared\Application\Bus\Command as MachineCommand;
 use Shared\Application\Bus\CommandBus;
 use Shared\Application\Bus\QueryBus;
 use Shared\Domain\Refusal;
@@ -13,13 +14,20 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\StreamableInputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Uid\Uuid;
+use Vending\Application\GetInsertedMoney\GetInsertedMoney;
 use Vending\Application\GetMachineContents\GetMachineContents;
+use Vending\Application\GetOutputTray\GetOutputTray;
 use Vending\Application\ServiceMachine\ServiceMachine;
 use Vending\Application\StartMachine\StartMachine;
+use Vending\Application\TakeOutput\TakeOutput;
+use Vending\Domain\Coin;
 use Vending\Domain\VendingMachineId;
 use Vending\UI\Cli\Input\ActionParser;
 use Vending\UI\Cli\Input\InvalidLine;
+use Vending\UI\Cli\Output\CoinFormat;
+use Vending\UI\Cli\Output\MoneyFormat;
 use Vending\UI\Cli\Output\StatusView;
+use Vending\UI\Cli\Output\TrayView;
 
 #[AsCommand(name: 'vending-machine', description: 'Runs an interactive vending machine session.')]
 final class VendingMachineCommand extends Command
@@ -37,12 +45,13 @@ final class VendingMachineCommand extends Command
         $this->commandBus->dispatch(new StartMachine($machineId));
 
         $output->writeln('Vending machine ready.');
-        $output->writeln(sprintf(
-            'Actions: %s | %s | %s',
+        $output->writeln(sprintf('Actions: %s', implode(' | ', [
+            ...array_map(CoinFormat::of(...), Coin::cases()),
+            ActionParser::RETURN_COIN,
             ActionParser::SERVICE,
             ActionParser::STATUS,
             ActionParser::EXIT,
-        ));
+        ])));
 
         $lines = self::linesFrom($input);
         while (true) {
@@ -53,6 +62,10 @@ final class VendingMachineCommand extends Command
             }
 
             $this->performLine(ActionParser::actionsIn($line), $machineId, $output);
+
+            $this->takeWhatCameOut($machineId, $output);
+            $insertedMoney = $this->queryBus->ask(new GetInsertedMoney($machineId));
+            $output->writeln(sprintf('  Inserted: %s', MoneyFormat::of($insertedMoney)));
         }
     }
 
@@ -78,11 +91,23 @@ final class VendingMachineCommand extends Command
             match (true) {
                 $message instanceof GetMachineContents => $this->showContents($message, $output),
                 $message instanceof ServiceMachine => $this->service($message, $output),
+                $message instanceof MachineCommand => $this->commandBus->dispatch($message),
                 default => $output->writeln(sprintf('  Invalid input: %s', $action)),
             };
         } catch (Refusal) {
             $output->writeln(sprintf('  Invalid input: %s', $action));
         }
+    }
+
+    private function takeWhatCameOut(VendingMachineId $machineId, OutputInterface $output): void
+    {
+        $cameOut = TrayView::of($this->queryBus->ask(new GetOutputTray($machineId)));
+        if ($cameOut === null) {
+            return;
+        }
+
+        $output->writeln($cameOut);
+        $this->commandBus->dispatch(new TakeOutput($machineId));
     }
 
     private function service(ServiceMachine $servicing, OutputInterface $output): void

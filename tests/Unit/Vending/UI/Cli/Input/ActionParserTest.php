@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Tests\Mother\VendingMachineMother;
 use Vending\Application\GetMachineContents\GetMachineContents;
+use Vending\Application\InsertCoin\InsertCoin;
+use Vending\Application\ReturnMoney\ReturnMoney;
 use Vending\Application\ServiceMachine\ServiceMachine;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
@@ -136,5 +138,37 @@ final class ActionParserTest extends TestCase
     public function reads_nothing_from_a_service_that_is_not_valid(string $action): void
     {
         self::assertNull(ActionParser::messageFor($action, VendingMachineMother::id()));
+    }
+
+    /** @return iterable<string, array{string, Coin}> */
+    public static function writtenCoins(): iterable
+    {
+        yield '0.05' => ['0.05', Coin::FiveCents];
+        yield '0.10' => ['0.10', Coin::TenCents];
+        yield '0.25' => ['0.25', Coin::TwentyFiveCents];
+        yield '1' => ['1', Coin::OneHundredCents];
+    }
+
+    #[Test]
+    #[DataProvider('writtenCoins')]
+    public function reads_a_coin_as_inserting_it(string $action, Coin $coin): void
+    {
+        $message = ActionParser::messageFor($action, VendingMachineMother::id());
+
+        self::assertEquals(new InsertCoin(VendingMachineMother::id(), $coin), $message);
+    }
+
+    #[Test]
+    public function reads_nothing_from_a_coin_the_machine_does_not_take(): void
+    {
+        self::assertNull(ActionParser::messageFor('0.50', VendingMachineMother::id()));
+    }
+
+    #[Test]
+    public function reads_return_coin_as_returning_the_money(): void
+    {
+        $message = ActionParser::messageFor('RETURN-COIN', VendingMachineMother::id());
+
+        self::assertEquals(new ReturnMoney(VendingMachineMother::id()), $message);
     }
 }

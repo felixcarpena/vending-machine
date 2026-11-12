@@ -15,8 +15,23 @@ services:
     Vending\Application\StartMachine\StartMachineHandler:
         tags: [{ name: messenger.message_handler, bus: command.bus }]
 
+    Vending\Application\InsertCoin\InsertCoinHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
+    Vending\Application\ReturnMoney\ReturnMoneyHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
+    Vending\Application\TakeOutput\TakeOutputHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
     Vending\Application\ServiceMachine\ServiceMachineHandler:
         tags: [{ name: messenger.message_handler, bus: command.bus }]
+
+    Vending\Application\GetInsertedMoney\GetInsertedMoneyHandler:
+        tags: [{ name: messenger.message_handler, bus: query.bus }]
+
+    Vending\Application\GetOutputTray\GetOutputTrayHandler:
+        tags: [{ name: messenger.message_handler, bus: query.bus }]
 
     Vending\Application\GetMachineContents\GetMachineContentsHandler:
         tags: [{ name: messenger.message_handler, bus: query.bus }]

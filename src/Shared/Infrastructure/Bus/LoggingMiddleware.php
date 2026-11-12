@@ -14,6 +14,7 @@ use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\Middleware\MiddlewareInterface;
 use Symfony\Component\Messenger\Middleware\StackInterface;
+use UnitEnum;
 
 final readonly class LoggingMiddleware implements MiddlewareInterface
 {
@@ -51,9 +52,15 @@ final readonly class LoggingMiddleware implements MiddlewareInterface
     /** @return array<string> */
     private static function fieldsOf(object $message): array
     {
-        return array_map(
-            static fn(Stringable $value): string => (string) $value,
-            array_filter(get_object_vars($message), static fn(mixed $value): bool => $value instanceof Stringable),
-        );
+        $fields = [];
+        foreach (get_object_vars($message) as $field => $value) {
+            if ($value instanceof Stringable) {
+                $fields[$field] = (string) $value;
+            } elseif ($value instanceof UnitEnum) {
+                $fields[$field] = $value->name;
+            }
+        }
+
+        return $fields;
     }
 }

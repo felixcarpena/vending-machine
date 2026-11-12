@@ -28,7 +28,7 @@ final class VendingMachineCommandTest extends KernelTestCase
         $this->session->execute([]);
 
         self::assertStringContainsString(
-            "Vending machine ready.\nActions: SERVICE | STATUS | EXIT",
+            "Vending machine ready.\nActions: 0.05 | 0.10 | 0.25 | 1 | RETURN-COIN | SERVICE | STATUS | EXIT",
             $this->session->getDisplay(),
         );
     }
@@ -113,6 +113,36 @@ final class VendingMachineCommandTest extends KernelTestCase
 
         self::assertStringContainsString('  Invalid input: SERVICE WATER=1, 0.05=2', $this->session->getDisplay());
         self::assertStringNotContainsString('Machine serviced.', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function ends_every_line_with_the_inserted_money(): void
+    {
+        $this->session->setInputs(['0.25, 0.10', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('  Inserted: 0.35', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function hands_back_the_inserted_coins_largest_first(): void
+    {
+        $this->session->setInputs(['0.10, 1, RETURN-COIN', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('-> 1, 0.10', $this->session->getDisplay());
+    }
+
+    #[Test]
+    public function shows_what_came_out_only_once(): void
+    {
+        $this->session->setInputs(['0.10, RETURN-COIN', 'STATUS', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertSame(1, substr_count($this->session->getDisplay(), '-> 0.10'));
     }
 
     #[Test]

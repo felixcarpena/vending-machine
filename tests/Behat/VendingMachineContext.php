@@ -84,6 +84,26 @@ final class VendingMachineContext implements Context
         Assert::assertSame($coins->getColumnsHash(), self::coinsIn($this->session()->send('STATUS')));
     }
 
+    #[Then('the machine gives out :items')]
+    public function theMachineGivesOut(string $items): void
+    {
+        Assert::assertSame([$items], self::handedOutIn($this->lastResponse));
+    }
+
+    #[Then('nothing comes out')]
+    public function nothingComesOut(): void
+    {
+        Assert::assertSame([], self::handedOutIn($this->lastResponse));
+    }
+
+    #[Then('the inserted money is :amount')]
+    public function theInsertedMoneyIs(string $amount): void
+    {
+        preg_match_all('/^  Inserted: (?<amount>\d+\.\d{2})$/m', $this->lastResponse, $lines);
+
+        Assert::assertSame($amount, end($lines['amount']));
+    }
+
     #[Then('the input :input is rejected as invalid')]
     public function theInputIsRejectedAsInvalid(string $input): void
     {
@@ -126,6 +146,14 @@ final class VendingMachineContext implements Context
             $catalog[$slot['slot']] = ['product' => $slot['product'], 'price' => $slot['price']];
         }
         Assert::assertSame($this->catalog, array_intersect_key($catalog, $this->catalog), 'The catalog differs.');
+    }
+
+    /** @return list<string> */
+    private static function handedOutIn(string $response): array
+    {
+        preg_match_all('/^-> (?<items>.+)$/m', $response, $lines);
+
+        return $lines['items'];
     }
 
     /** @return list<array{slot: string, product: string, price: string, stock: string}> */

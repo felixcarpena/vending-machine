@@ -7,6 +7,7 @@ namespace Tests\Integration\Shared\Infrastructure\Bus;
 use DomainException;
 use LogicException;
 use Monolog\Handler\TestHandler;
+use Monolog\Level;
 use Monolog\Logger;
 use Monolog\LogRecord;
 use PHPUnit\Framework\Attributes\Test;
@@ -76,6 +77,19 @@ final class LoggingMiddlewareTest extends TestCase
         self::busWhere($message, static function (): void {}, $recorded)->dispatch($message);
 
         self::assertSame(['machineId' => 'machine-1'], self::onlyRecordIn($recorded)->context);
+    }
+
+    #[Test]
+    public function writes_an_enum_field_by_its_name(): void
+    {
+        $recorded = new TestHandler();
+        $message = new class {
+            public Level $level = Level::Warning;
+        };
+
+        self::busWhere($message, static function (): void {}, $recorded)->dispatch($message);
+
+        self::assertSame(['level' => 'Warning'], self::onlyRecordIn($recorded)->context);
     }
 
     #[Test]

@@ -46,7 +46,6 @@ Feature: Service the machine
       | 0.25 | 2     |
       | 1    | 0     |
 
-  @wip
   Scenario: Servicing leaves the inserted money alone
     Given the customer entered "0.25, 0.10"
     When the service person enters "SERVICE WATER=1"

@@ -30,7 +30,6 @@ Feature: See what the machine holds
       | 0.25 | 7     |
       | 1    | 0     |
 
-  @wip
   Scenario: Asking changes nothing
     Given the customer entered "0.25"
     When the service person enters "STATUS"

@@ -1,4 +1,3 @@
-@wip
 Feature: Return the money
   In order to change my mind before buying
   As a customer

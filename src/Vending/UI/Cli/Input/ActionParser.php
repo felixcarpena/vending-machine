@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Vending\UI\Cli\Input;
 
+use Shared\Application\Bus\Command;
 use Vending\Application\GetMachineContents\GetMachineContents;
+use Vending\Application\InsertCoin\InsertCoin;
+use Vending\Application\ReturnMoney\ReturnMoney;
 use Vending\Application\ServiceMachine\ServiceMachine;
 use Vending\Domain\Coin;
 use Vending\Domain\Coins;
@@ -13,6 +16,7 @@ use Vending\Domain\VendingMachineId;
 
 final class ActionParser
 {
+    public const string RETURN_COIN = 'RETURN-COIN';
     public const string SERVICE = 'SERVICE';
     public const string STATUS = 'STATUS';
     public const string EXIT = 'EXIT';
@@ -36,11 +40,13 @@ final class ActionParser
         return array_values(array_filter($actions, static fn(string $action): bool => $action !== ''));
     }
 
-    public static function messageFor(
-        string $action,
-        VendingMachineId $machineId,
-    ): ServiceMachine|GetMachineContents|null {
+    public static function messageFor(string $action, VendingMachineId $machineId): Command|GetMachineContents|null
+    {
+        $coin = self::coinWrittenAs($action);
+
         return match (true) {
+            $coin !== null => new InsertCoin($machineId, $coin),
+            $action === self::RETURN_COIN => new ReturnMoney($machineId),
             $action === self::STATUS => new GetMachineContents($machineId),
             str_starts_with($action, self::SERVICE) => self::servicingIn($action, $machineId),
             default => null,

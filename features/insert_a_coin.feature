@@ -1,4 +1,3 @@
-@wip
 Feature: Insert a coin
   In order to pay for a product
   As a customer

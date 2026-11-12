@@ -38,6 +38,17 @@ final class VendingMachineMother
         return StartingSetup::of(self::startingSlots(), self::startingChange());
     }
 
+    public static function withCoinsInserted(Coin ...$coins): VendingMachine
+    {
+        $machine = self::started();
+        foreach ($coins as $coin) {
+            $machine->insertCoin($coin);
+        }
+        $machine->pullEvents();
+
+        return $machine;
+    }
+
     public static function startingChange(): AvailableChange
     {
         return AvailableChange::of(Coins::of(
