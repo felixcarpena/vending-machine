@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Mother;
 
+use Vending\Domain\AvailableChange;
+use Vending\Domain\Coin;
+use Vending\Domain\Coins;
 use Vending\Domain\Money;
 use Vending\Domain\Product;
 use Vending\Domain\Selector;
@@ -27,12 +30,21 @@ final class VendingMachineMother
 
     public static function startedAs(VendingMachineId $id): VendingMachine
     {
-        return new VendingMachine($id, self::startingSlots());
+        return new VendingMachine($id, self::startingChange(), self::startingSlots());
     }
 
     public static function startingSetup(): StartingSetup
     {
-        return StartingSetup::of(self::startingSlots());
+        return StartingSetup::of(self::startingSlots(), self::startingChange());
+    }
+
+    public static function startingChange(): AvailableChange
+    {
+        return AvailableChange::of(Coins::of(
+            ...array_fill(0, 10, Coin::FiveCents),
+            ...array_fill(0, 10, Coin::TenCents),
+            ...array_fill(0, 10, Coin::TwentyFiveCents),
+        ));
     }
 
     private static function startingSlots(): Slots

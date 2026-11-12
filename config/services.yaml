@@ -3,6 +3,10 @@ parameters:
         WATER: { product: WATER, price: 65, stock: 10 }
         JUICE: { product: JUICE, price: 100, stock: 10 }
         SODA: { product: SODA, price: 150, stock: 10 }
+    vending.starting_change:
+        5: 10
+        10: 10
+        25: 10
 
 services:
     _defaults:
@@ -16,7 +20,7 @@ services:
 
     Vending\Domain\StartingSetup:
         factory: ['Vending\Infrastructure\StartingSetupFromConfiguration', 'read']
-        arguments: ['%vending.slots%']
+        arguments: ['%vending.slots%', '%vending.starting_change%']
 
     Vending\Infrastructure\InMemoryVendingMachineRepository:
         arguments: []

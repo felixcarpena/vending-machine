@@ -17,7 +17,7 @@ use Vending\Infrastructure\InMemoryVendingMachineRepository;
 final class GetMachineContentsHandlerTest extends TestCase
 {
     #[Test]
-    public function lists_each_slot_with_its_product_price_and_stock(): void
+    public function lists_each_slot_and_the_coins_for_change(): void
     {
         $contentsReader = new GetMachineContentsHandler(
             new InMemoryVendingMachineRepository(VendingMachineMother::started()),
@@ -29,6 +29,6 @@ final class GetMachineContentsHandlerTest extends TestCase
             new SlotContents('WATER', 'WATER', Money::fromCents(65), 10),
             new SlotContents('JUICE', 'JUICE', Money::fromCents(100), 10),
             new SlotContents('SODA', 'SODA', Money::fromCents(150), 10),
-        ]), $contents);
+        ], VendingMachineMother::startingChange()->coins), $contents);
     }
 }

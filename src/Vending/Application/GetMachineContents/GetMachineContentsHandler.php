@@ -15,7 +15,7 @@ final readonly class GetMachineContentsHandler
     {
         $machine = $this->machines->get($query->machineId);
 
-        return new MachineContents(array_map(
+        $slots = array_map(
             static fn(Slot $slot): SlotContents => new SlotContents(
                 $slot->selector->value,
                 $slot->product->name,
@@ -23,6 +23,8 @@ final readonly class GetMachineContentsHandler
                 $slot->stock,
             ),
             $machine->slots->all(),
-        ));
+        );
+
+        return new MachineContents($slots, $machine->availableChange->coins);
     }
 }

@@ -59,6 +59,16 @@ final class VendingMachineCommandTest extends KernelTestCase
     }
 
     #[Test]
+    public function shows_how_many_of_each_coin_the_machine_holds_on_status(): void
+    {
+        $this->session->setInputs(['STATUS', 'EXIT']);
+
+        $this->session->execute([]);
+
+        self::assertStringContainsString('  Coins: 0.05 x10, 0.10 x10, 0.25 x10, 1 x0', $this->session->getDisplay());
+    }
+
+    #[Test]
     public function ends_the_session_on_exit(): void
     {
         $this->session->setInputs(['EXIT', 'COFFEE']);
