@@ -16,6 +16,8 @@ make analyse       # run static analysis
 make lint          # check the coding standard (make fix applies it)
 make acceptance    # run the acceptance scenarios that are already implemented
 make spec-status   # list the scenarios still to implement, tagged @wip
+make coverage      # run the PHPUnit suites and report their line coverage
+make mutation      # run mutation testing with Infection
 make shell         # open a shell in the container
 ```
 
@@ -62,6 +64,12 @@ The behaviour was written as Gherkin in `features/` before any code, and Behat r
 The code is organised by module and then by layer. `src/Vending` is the bounded context, with `Domain`, `Application`, `Infrastructure` and `UI`. `src/Shared` holds the building blocks it relies on: the aggregate root, domain events, and the command, query and event buses, implemented with Symfony Messenger. The domain and application layers do not depend on Symfony.
 
 Tests are grouped by level. `tests/Unit` covers the domain on its own, `tests/Application` the use cases with an in-memory repository, `tests/Integration` the adapters and the wiring of the Symfony kernel and the CLI, and `features/` the use cases end to end.
+
+## Coverage and mutation testing
+
+Measured on the commit that adds this section. The PHPUnit suites cover 99.6% of the lines in `src` (461 of 463). Infection makes 472 mutants and the tests kill 95% of them. The 23 that survive change nothing a test could see (the start index of an array that is spread, the empty starting total of the escrow search, a `true` that only marks a key in a set, which of two equally short ways to pay the change is kept), or only touch log timings and exception messages, or the prompt and the fallback to STDIN, which only the Behat scenarios exercise; 2 more time out.
+
+Both numbers count PHPUnit alone: the Behat scenarios drive the CLI in another process, which neither coverage nor Infection follows.
 
 ## Known limits and trade-offs
 

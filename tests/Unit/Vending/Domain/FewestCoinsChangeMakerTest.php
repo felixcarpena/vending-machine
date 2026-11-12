@@ -39,6 +39,26 @@ final class FewestCoinsChangeMakerTest extends TestCase
     }
 
     #[Test]
+    public function pays_with_the_fewest_coins_when_more_coins_also_add_up(): void
+    {
+        $available = Coins::of(Coin::TwentyFiveCents, Coin::TenCents, Coin::TenCents, Coin::TenCents, Coin::FiveCents);
+
+        $change = $this->changeMaker->changeFor(Money::fromCents(30), $available);
+
+        self::assertEquals(Coins::of(Coin::TwentyFiveCents, Coin::FiveCents), $change);
+    }
+
+    #[Test]
+    public function still_pays_with_the_other_coins_when_it_holds_one_unit_coins(): void
+    {
+        $available = Coins::of(Coin::OneHundredCents, Coin::TwentyFiveCents, Coin::TenCents);
+
+        $change = $this->changeMaker->changeFor(Money::fromCents(35), $available);
+
+        self::assertEquals(Coins::of(Coin::TwentyFiveCents, Coin::TenCents), $change);
+    }
+
+    #[Test]
     public function pays_when_taking_the_largest_coin_first_would_fail(): void
     {
         $available = Coins::of(Coin::TwentyFiveCents, Coin::TenCents, Coin::TenCents, Coin::TenCents);
