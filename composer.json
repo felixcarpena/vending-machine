@@ -16,7 +16,8 @@
         "behat/behat": "^4.0",
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.3",
-        "phpunit/phpunit": "^13.4"
+        "phpunit/phpunit": "^13.4",
+        "symfony/process": "^8.1"
     },
     "autoload": {
         "psr-4": {
