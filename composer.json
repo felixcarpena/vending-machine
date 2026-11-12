@@ -4,7 +4,11 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": "^8.5"
+        "php": "^8.5",
+        "symfony/framework-bundle": "^8.1",
+        "symfony/messenger": "^8.1",
+        "symfony/monolog-bundle": "^4.1",
+        "symfony/yaml": "^8.1"
     },
     "require-dev": {
         "behat/behat": "^4.0",
@@ -14,6 +18,7 @@
     },
     "autoload": {
         "psr-4": {
+            "Shared\\": "src/Shared/",
             "Vending\\": "src/Vending/"
         }
     },

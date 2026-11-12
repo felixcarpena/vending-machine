@@ -1,0 +1,12 @@
+services:
+    Shared\Application\Bus\CommandBus:
+        alias: Shared\Infrastructure\Bus\MessengerCommandBus
+        public: true
+
+    Vending\Domain\VendingMachineRepository:
+        alias: Vending\Infrastructure\InMemoryVendingMachineRepository
+        public: true
+
+    Monolog\Handler\TestHandler:
+        alias: monolog.handler.recorded
+        public: true

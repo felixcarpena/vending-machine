@@ -1,0 +1,19 @@
+services:
+    _defaults:
+        autowire: true
+
+    Vending\Application\StartMachine\StartMachineHandler:
+        tags: [{ name: messenger.message_handler, bus: command.bus }]
+
+    Vending\Infrastructure\InMemoryVendingMachineRepository:
+        arguments: []
+
+    Vending\Domain\VendingMachineRepository: '@Vending\Infrastructure\InMemoryVendingMachineRepository'
+
+    Shared\Infrastructure\Bus\LoggingMiddleware:
+        arguments: ['@monolog.logger.bus']
+
+    Shared\Infrastructure\Bus\MessengerCommandBus:
+        arguments: ['@command.bus']
+
+    Shared\Application\Bus\CommandBus: '@Shared\Infrastructure\Bus\MessengerCommandBus'

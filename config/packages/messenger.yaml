@@ -1,0 +1,7 @@
+framework:
+    messenger:
+        default_bus: command.bus
+        buses:
+            command.bus:
+                middleware:
+                    - Shared\Infrastructure\Bus\LoggingMiddleware

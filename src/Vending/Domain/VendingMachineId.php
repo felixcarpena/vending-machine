@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Vending\Domain;
 
+use Stringable;
 use Vending\Domain\Exception\InvalidVendingMachineId;
 
-final readonly class VendingMachineId
+final readonly class VendingMachineId implements Stringable
 {
     private const string UUID_V7 = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/';
 
@@ -20,5 +21,10 @@ final readonly class VendingMachineId
     public static function of(string $value): self
     {
         return new self(strtolower($value));
+    }
+
+    public function __toString(): string
+    {
+        return $this->value;
     }
 }

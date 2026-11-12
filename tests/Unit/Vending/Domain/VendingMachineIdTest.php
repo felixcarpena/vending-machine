@@ -36,4 +36,12 @@ final class VendingMachineIdTest extends TestCase
 
         self::assertSame('0193b4e2-7c2a-7d3f-8a1b-2c3d4e5f6a7b', $id->value);
     }
+
+    #[Test]
+    public function is_written_as_its_value(): void
+    {
+        $id = VendingMachineId::of('0193b4e2-7c2a-7d3f-8a1b-2c3d4e5f6a7b');
+
+        self::assertSame('0193b4e2-7c2a-7d3f-8a1b-2c3d4e5f6a7b', (string) $id);
+    }
 }

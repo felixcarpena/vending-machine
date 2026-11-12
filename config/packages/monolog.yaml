@@ -1,0 +1,15 @@
+monolog:
+    channels: [bus]
+    handlers:
+        console:
+            type: console
+            channels: [bus]
+            verbosity_levels:
+                VERBOSITY_NORMAL: CRITICAL
+
+when@test:
+    monolog:
+        handlers:
+            recorded:
+                type: test
+                channels: [bus]
