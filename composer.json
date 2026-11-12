@@ -5,9 +5,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.5",
+        "symfony/console": "^8.1",
         "symfony/framework-bundle": "^8.1",
         "symfony/messenger": "^8.1",
         "symfony/monolog-bundle": "^4.1",
+        "symfony/uid": "^8.1",
         "symfony/yaml": "^8.1"
     },
     "require-dev": {

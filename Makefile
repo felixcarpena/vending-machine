@@ -9,13 +9,16 @@ RUN = docker run --rm -i $(TTY) \
 	$(if $(DEBUG),--env XDEBUG_TRIGGER=1) \
 	$(IMAGE)
 
-.PHONY: build install shell test analyse lint fix acceptance spec-status
+.PHONY: build install run shell test analyse lint fix acceptance spec-status clear-cache
 
 build:
 	docker build --target dev --tag $(IMAGE) .
 
 install: build
 	$(RUN) composer install
+
+run: clear-cache
+	$(RUN) bin/vending-machine
 
 shell:
 	$(RUN) bash
@@ -32,8 +35,11 @@ lint:
 fix:
 	$(RUN) vendor/bin/php-cs-fixer fix
 
-acceptance:
+acceptance: clear-cache
 	$(RUN) vendor/bin/behat
 
 spec-status:
 	$(RUN) vendor/bin/behat --profile=wip --dry-run --no-snippets
+
+clear-cache:
+	rm -rf var/cache

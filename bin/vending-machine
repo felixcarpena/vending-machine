@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Shared\Infrastructure\Symfony\Kernel;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$application = new Application(new Kernel($_SERVER['APP_ENV'] ?? 'prod', false));
+$application->setDefaultCommand('vending-machine', true);
+
+exit($application->run());

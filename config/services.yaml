@@ -17,3 +17,6 @@ services:
         arguments: ['@command.bus']
 
     Shared\Application\Bus\CommandBus: '@Shared\Infrastructure\Bus\MessengerCommandBus'
+
+    Vending\UI\Cli\VendingMachineCommand:
+        autoconfigure: true
