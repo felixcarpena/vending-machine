@@ -1,0 +1,20 @@
+{
+    "name": "felixcarpena/vending-machine",
+    "description": "A vending machine that takes coins, sells products and gives change.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.5"
+    },
+    "require-dev": {
+        "behat/behat": "^4.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
